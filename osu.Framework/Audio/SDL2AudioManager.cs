@@ -130,23 +130,21 @@ namespace osu.Framework.Audio
             }
         }
 
-        private void internalAudioCallback(IntPtr stream, int bufsize)
+        private unsafe void internalAudioCallback(IntPtr stream, int bufsize)
         {
             try
             {
-                float[] main = new float[bufsize / 4];
+                float* main = (float*)stream.ToPointer();
+                int filled = 0;
 
                 foreach (var mixer in sdlMixerList)
                 {
                     if (mixer.IsAlive)
-                        mixer.MixChannelsInto(main);
+                        mixer.MixChannelsInto(main, ref filled, bufsize / 4);
                 }
 
-                unsafe
-                {
-                    fixed (float* mainPtr = main)
-                        Buffer.MemoryCopy(mainPtr, stream.ToPointer(), bufsize, bufsize);
-                }
+                for (; filled < bufsize / 4; filled++)
+                    *(main + filled) = 0;
             }
             catch (Exception e)
             {
@@ -231,7 +229,8 @@ namespace osu.Framework.Audio
                             Device Name: {currentDeviceName}
                             Format:      {spec.freq}hz {spec.channels}ch
                             Resolution:  {(SDL.SDL_AUDIO_ISUNSIGNED(spec.format) ? "unsigned " : "")}{SDL.SDL_AUDIO_BITSIZE(spec.format)}bit{(SDL.SDL_AUDIO_ISFLOAT(spec.format) ? " float" : "")}
-                            Samples:     {spec.samples} samples");
+                            Samples:     {spec.samples} samples
+                            Mix Intrinsics: {SDL2AudioMixer.GetIntrinsicsType() ?? "None"}");
 
             return true;
         }
