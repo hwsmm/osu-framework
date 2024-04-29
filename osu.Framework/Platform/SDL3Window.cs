@@ -151,7 +151,7 @@ namespace osu.Framework.Platform
 
             SDL3.SDL_SetHint(SDL3.SDL_HINT_APP_NAME, appName);
 
-            if (SDL3.SDL_Init(SDL_InitFlags.SDL_INIT_VIDEO | SDL_InitFlags.SDL_INIT_GAMEPAD) < 0)
+            if (SDL3.SDL_Init(SDL_InitFlags.SDL_INIT_VIDEO | SDL_InitFlags.SDL_INIT_GAMEPAD | SDL_InitFlags.SDL_INIT_AUDIO) < 0)
             {
                 throw new InvalidOperationException($"Failed to initialise SDL: {SDL3.SDL_GetError()}");
             }

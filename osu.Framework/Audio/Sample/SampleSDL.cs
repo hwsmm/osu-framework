@@ -1,20 +1,18 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using osu.Framework.Audio.Mixing.Bass;
+using osu.Framework.Audio.Mixing.SDL;
 
 namespace osu.Framework.Audio.Sample
 {
-    internal sealed class SampleBass : Sample
+    internal sealed class SampleSDL : Sample
     {
-        public int SampleId => factory.SampleId;
-
         public override bool IsLoaded => factory.IsLoaded;
 
-        private readonly SampleBassFactory factory;
-        private readonly BassAudioMixer mixer;
+        private readonly SampleSDLFactory factory;
+        private readonly SDLAudioMixer mixer;
 
-        internal SampleBass(SampleBassFactory factory, BassAudioMixer mixer)
+        public SampleSDL(SampleSDLFactory factory, SDLAudioMixer mixer)
             : base(factory)
         {
             this.factory = factory;
@@ -23,7 +21,7 @@ namespace osu.Framework.Audio.Sample
 
         protected override SampleChannel CreateChannel()
         {
-            var channel = new SampleChannelBass(this);
+            var channel = new SampleChannelSDL(this, factory.CreatePlayer());
             mixer.Add(channel);
             return channel;
         }

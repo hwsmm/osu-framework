@@ -4,8 +4,8 @@
 using System;
 using System.Threading.Tasks;
 using osu.Framework.Audio.Mixing;
-using osu.Framework.Statistics;
 using osu.Framework.Audio.Track;
+using osu.Framework.Statistics;
 
 namespace osu.Framework.Audio.Sample
 {
