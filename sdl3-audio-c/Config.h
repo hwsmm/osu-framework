@@ -1,7 +1,5 @@
 #pragma once
 
-// #define FLOAT_SAMPLE
-
 #ifndef FLOAT_SAMPLE
 typedef short sample_t;
 
@@ -19,8 +17,6 @@ typedef float sample_t;
 #define ToFloat(x) (float)(x)
 #define FromFloat(x) (float)(x)
 #endif
-
-// #define USE_C_MUTEX
 
 #ifndef USE_C_MUTEX
 #include <SDL3/SDL.h>

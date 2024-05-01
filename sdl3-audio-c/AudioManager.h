@@ -3,7 +3,7 @@
 #include "Mixer.h"
 #include "Config.h"
 #include <stdbool.h>
-#include <SDL3/SDL_audio.h>
+#include <SDL3/SDL.h>
 
 typedef void (*LogFunction)(int, char*);
 

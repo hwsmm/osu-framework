@@ -221,7 +221,7 @@ void MixerFillAudio(Mixer *mixer, uint8_t *put, int size)
 
     if (mixer->filter_list_size > 0)
     {
-        if (mixer->filter_buffer_size != size)
+        if (mixer->filter_buffer_size < size)
         {
             if (mixer->filter_buffer != NULL)
                 free(mixer->filter_buffer);
