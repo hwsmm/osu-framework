@@ -22,29 +22,37 @@ http://www.smartelectronix.com/musicdsp/text/filters005.txt
 #include "biquad.h"
 #include <stdlib.h>
 
-#define biquad_internal(lr) \
-    result = b->a0 * sample + b->a1 * b->x1##lr + b->a2 * b->x2##lr - \
-             b->a3 * b->y1##lr - b->a4 * b->y2##lr; \
+#define biquad_internal(lr, res, smp) \
+    res = b->a0 * smp + b->a1 * b->x1##lr + b->a2 * b->x2##lr - \
+          b->a3 * b->y1##lr - b->a4 * b->y2##lr; \
     b->x2##lr = b->x1##lr; \
-    b->x1##lr = sample; \
+    b->x1##lr = smp; \
     b->y2##lr = b->y1##lr; \
-    b->y1##lr = result;
+    b->y1##lr = res;
     
 /* Below this would be biquad.c */
 /* Computes a BiQuad filter on a sample */
-void BiQuad(sample_t *l, sample_t *r, biquad * b)
+void BiQuad(sample_t *left, sample_t *right, biquad * b)
 {
+    smp_type sample;
+    
+#ifndef FLOAT_SAMPLE
     smp_type result;
-    smp_type sample = FromFloat(*l);
     
-    biquad_internal(l);
+    sample = FromFloat(*left);
+    biquad_internal(l, result, sample);
+    *left = ToFloat(result);
     
-    *l = ToFloat(result);
-    sample = FromFloat(*r);
+    sample = FromFloat(*right);
+    biquad_internal(r, result, sample);
+    *right = ToFloat(result);
+#else
+    sample = *left;
+    biquad_internal(l, *left, sample);
     
-    biquad_internal(r);
-    
-    *r = ToFloat(result);
+    sample = *right;
+    biquad_internal(r, *right, sample);
+#endif
 }
 
 /* sets up a BiQuad Filter */
@@ -52,8 +60,8 @@ DLLAPI biquad *BiQuadNew(enum biquad_type type, double dbGain, double freq,
                          double srate, double q)
 {
     biquad *b;
-    smp_type A, omega, sn, cs, alpha, beta;
-    smp_type a0, a1, a2, b0, b1, b2;
+    double A, omega, sn, cs, alpha, beta;
+    double a0, a1, a2, b0, b1, b2;
 
     /* setup variables */
     A = pow(10.0, dbGain /40.0);

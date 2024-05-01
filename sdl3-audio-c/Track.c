@@ -145,8 +145,12 @@ DLLAPI bool TrackIsPlaying(Track *track)
 
 DLLAPI void TrackSetVolume(Track *track, double volume, double balance)
 {
-    track->left = (float)(volume * (balance > 0 ? balance : 1.0));
-    track->right = (float)(volume * (balance < 0 ? -balance : 1.0));
+    track->left = track->right = (float)volume;
+    
+    if (balance > 0)
+        track->left *= balance;
+    else if (balance < 0)
+        track->right *= -balance;
 }
 
 DLLAPI void TrackSetFreqTempo(Track *track, double freq, double tempo)
