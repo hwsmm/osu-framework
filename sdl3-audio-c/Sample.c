@@ -42,11 +42,12 @@ DLLAPI bool SampleIsPlaying(Sample *sample)
 DLLAPI void SampleSetVolume(Sample *sample, double volume, double balance)
 {
     sample->left = sample->right = (float)volume;
+    float fbal = fabsf((float)balance));
     
     if (balance > 0)
-        sample->left *= balance;
+        sample->left *= fbal;
     else if (balance < 0)
-        sample->right *= -balance;
+        sample->right *= fbal;
 }
 
 DLLAPI double SampleGetFrequency(Sample *sample)
