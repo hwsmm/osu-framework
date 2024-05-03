@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 #include <float.h>
 
 extern int frequency;
@@ -42,7 +43,7 @@ DLLAPI bool SampleIsPlaying(Sample *sample)
 DLLAPI void SampleSetVolume(Sample *sample, double volume, double balance)
 {
     sample->left = sample->right = (float)volume;
-    float fbal = fabsf((float)balance));
+    float fbal = 1.0f - fabsf((float)balance);
     
     if (balance > 0)
         sample->left *= fbal;
@@ -155,7 +156,7 @@ DLLAPI Sample *CreateSample(sample_t *data, int size)
 
     sample->size = size / sizeof(sample_t);
     sample->audio = data;
-    sample->rfreq = 1;
+    sample->left = sample->right = sample->rfreq = 1.0f;
     return sample;
 }
 

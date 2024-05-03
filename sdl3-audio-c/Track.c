@@ -36,6 +36,8 @@ DLLAPI Track *CreateTrack()
         free(track);
         return NULL;
     }
+    
+    track->left = track->right = 1.0f;
 
     return track;
 }
@@ -90,7 +92,7 @@ exit:
     return ret;
 }
 
-// INTENTIONALLY didn't put locks, is it needed? memory barrier may be needed though
+// Locks are not here intentionally since it's locked from C# side!
 DLLAPI int TrackPutData(Track *track, sample_t *audio, size_t size)
 {
     if (track->audio == NULL)
@@ -146,7 +148,7 @@ DLLAPI bool TrackIsPlaying(Track *track)
 DLLAPI void TrackSetVolume(Track *track, double volume, double balance)
 {
     track->left = track->right = (float)volume;
-    float fbal = fabsf((float)balance));
+    float fbal = 1.0f - fabsf((float)balance);
     
     if (balance > 0)
         track->left *= fbal;
