@@ -21,7 +21,7 @@ typedef float smp_type;
 /* this holds the data required to update samples thru a filter */
 typedef struct
 {
-    double a0, a1, a2, a3, a4;
+    smp_type a0, a1, a2, a3, a4;
     smp_type x1l, x2l, y1l, y2l;
     smp_type x1r, x2r, y1r, y2r;
 }

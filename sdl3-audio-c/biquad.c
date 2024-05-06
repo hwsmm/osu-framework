@@ -154,11 +154,11 @@ DLLAPI biquad *BiQuadNew(enum biquad_type type, double dbGain, double freq,
         return NULL;
 
     /* precompute the coefficients */
-    b->a0 = b0 /a0;
-    b->a1 = b1 /a0;
-    b->a2 = b2 /a0;
-    b->a3 = a1 /a0;
-    b->a4 = a2 /a0;
+    b->a0 = (float)(b0 /a0);
+    b->a1 = (float)(b1 /a0);
+    b->a2 = (float)(b2 /a0);
+    b->a3 = (float)(a1 /a0);
+    b->a4 = (float)(a2 /a0);
 
     /* zero initial samples */
     b->x1l = b->x2l = b->x1r = b->x2r = 0;
