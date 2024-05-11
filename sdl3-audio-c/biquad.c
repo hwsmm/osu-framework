@@ -39,13 +39,13 @@ void BiQuad(sample_t *left, sample_t *right, biquad * b)
 #ifndef FLOAT_SAMPLE
     smp_type result;
     
-    sample = FromFloat(*left);
+    sample = ToFloat(*left);
     biquad_internal(l, result, sample);
-    *left = ToFloat(result);
+    *left = FromFloat(result);
     
-    sample = FromFloat(*right);
+    sample = ToFloat(*right);
     biquad_internal(r, result, sample);
-    *right = ToFloat(result);
+    *right = FromFloat(result);
 #else
     sample = *left;
     biquad_internal(l, *left, sample);

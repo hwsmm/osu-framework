@@ -156,7 +156,8 @@ DLLAPI Sample *CreateSample(sample_t *data, int size)
 
     sample->size = size / sizeof(sample_t);
     sample->audio = data;
-    sample->left = sample->right = sample->rfreq = 1.0f;
+    sample->left = sample->right = 1.0f;
+    sample->rfreq = 1.0;
     return sample;
 }
 
