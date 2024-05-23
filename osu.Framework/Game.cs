@@ -24,6 +24,7 @@ using osu.Framework.Input.StateChanges;
 using osu.Framework.IO.Stores;
 using osu.Framework.Localisation;
 using osu.Framework.Platform;
+using osu.Framework.Platform.SDL3;
 using osuTK;
 
 namespace osu.Framework
@@ -167,7 +168,7 @@ namespace osu.Framework
 
             switch (config.Get<AudioDriver>(FrameworkSetting.AudioDriver))
             {
-                case AudioDriver.SDL3 when Host.Window is SDL3Window:
+                case AudioDriver.SDL3 when Window is SDL3Window:
                     Audio = new SDLAudioManager(Host.AudioThread, tracks, samples) { EventScheduler = Scheduler };
                     break;
 
