@@ -29,5 +29,6 @@ ITER_LINKED(NODE, __node, \
 });
 
 void AddNode(Node **head, void *pointer);
+void AddNodeAfter(Node **tail, void *pointer);
 int RemoveNode(Node **head, Node *node);
 void FreeList(Node *first);

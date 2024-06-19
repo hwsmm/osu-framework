@@ -23,6 +23,28 @@ void AddNode(Node **head, void *pointer)
     }
 }
 
+void AddNodeAfter(Node **tail, void *pointer)
+{
+    Node *new = (Node *)malloc(sizeof(Node));
+    if (new == NULL)
+        return;
+
+    new->pointer = pointer;
+    new->next = NULL;
+    new->prev = NULL;
+
+    if (*tail == NULL)
+    {
+        *tail = new;
+    }
+    else
+    {
+        new->prev = *tail;
+        (*tail)->next = new;
+        *tail = new;
+    }
+}
+
 int RemoveNode(Node **head, Node *node)
 {
     if (head == NULL || *head == NULL || node == NULL)

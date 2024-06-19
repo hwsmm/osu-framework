@@ -110,62 +110,60 @@ DLLAPI int RemoveSample(Mixer *mixer, Sample *channel)
     return RemoveList(mixer, &(mixer->sample_list), channel);
 }
 
-DLLAPI void ReplaceFilterList(Mixer *mixer, biquad **filter_list, int list_size)
+DLLAPI BiQuadEntry *ApplyBiquadFilter(Mixer *mixer, BiQuadEntry *entry, biquad_coeff *param, int priority)
 {
-    biquad **new_list = NULL, **old_list = mixer->filter_list;
-    if (list_size > 0)
+    if (entry == NULL)
     {
-        new_list = (biquad **)malloc(list_size * sizeof(biquad *));
-        if (new_list != NULL)
-            memcpy(new_list, filter_list, list_size * sizeof(biquad *));
+        entry = (BiQuadEntry *)malloc(sizeof(BiQuadEntry));
+        if (entry != NULL)
+            memset(entry, 0, sizeof(BiQuadEntry));
     }
-    
+    else // Update
+    {
+        MixerLock(mixer);
+        memcpy(&(entry->filter.coeff), param, sizeof(biquad_coeff));
+        MixerUnlock(mixer);
+
+        return entry;
+    }
+
+    memcpy(&(entry->filter.coeff), param, sizeof(biquad_coeff));
+    entry->priority = priority;
+
     MixerLock(mixer);
 
-    mixer->filter_list = new_list;
-    mixer->filter_list_size = list_size;
-
-    MixerUnlock(mixer);
-    
-    free(old_list);
-}
-
-DLLAPI void RemoveFilter(Mixer *mixer, int index)
-{
-    void *removed = NULL;
-    
-    MixerLock(mixer);
-    
-    if (index >= 0 && mixer->filter_list_size > index)
+    if (mixer->biquad_list == NULL || ((BiQuadEntry *)(mixer->biquad_list->pointer))->priority >= priority)
     {
-        removed = *(mixer->filter_list + index);
-        *(mixer->filter_list + index) = NULL;
-    }
-    
-    if (index == -2)
-    {
-        removed = mixer->filter_list;
-        mixer->filter_list = NULL;
-    }
-    
-    MixerUnlock(mixer);
-    
-    if (index == -2)
-    {
-        biquad **old_list = (biquad**)removed;
-        for (int i = 0; i < mixer->filter_list_size; i++)
-        {
-            free(*(old_list + i));
-        }
-        
-        mixer->filter_list_size = 0;
+        AddNode(&(mixer->biquad_list), entry);
     }
     else
     {
-        free(removed);
+        Node *target = NULL;
+
+        ITER_LINKED(mixer->biquad_list, node,
+            {
+                if (node->next != NULL)
+                {
+                    BiQuadEntry *it = (BiQuadEntry *)node->next->pointer;
+                    if (it->priority < priority)
+                        target = node->next;
+                }
+            });
+
+        AddNodeAfter(&target, entry);
     }
+
+    MixerUnlock(mixer);
+
+    return entry;
 }
 
+DLLAPI int RemoveBiquadFilter(Mixer *mixer, BiQuadEntry *entry)
+{
+    int i = RemoveList(mixer, &(mixer->biquad_list), entry);
+    free(entry);
+    return i;
+}
 
 #ifdef FLOAT_SAMPLE
 #define INTERNAL_MIX(ptr, val) ptr += val
@@ -219,7 +217,7 @@ void MixerFillAudio(Mixer *mixer, uint8_t *put, int size)
 
     MixerLock(mixer);
 
-    if (mixer->filter_list_size > 0)
+    if (mixer->biquad_list != NULL)
     {
         if (mixer->filter_buffer_size < size)
         {
@@ -239,9 +237,7 @@ void MixerFillAudio(Mixer *mixer, uint8_t *put, int size)
 
     size /= sizeof(sample_t);
     
-    if (mixer->track_list != NULL)
-    {
-        ITER_LINKED_UNBOX(mixer->track_list, Track*, chan,
+    ITER_LINKED_UNBOX(mixer->track_list, Track *, chan,
         {
             if (chan->playing)
             {
@@ -249,11 +245,8 @@ void MixerFillAudio(Mixer *mixer, uint8_t *put, int size)
                 MixAudio(abuf, mixer->buffer, got, chan->left, chan->right);
             }
         });
-    }
     
-    if (mixer->sample_list != NULL)
-    {
-        ITER_LINKED_UNBOX(mixer->sample_list, Sample*, chan,
+    ITER_LINKED_UNBOX(mixer->sample_list, Sample *, chan,
         {
             if (chan->playing)
             {
@@ -261,22 +254,18 @@ void MixerFillAudio(Mixer *mixer, uint8_t *put, int size)
                 MixAudio(abuf, mixer->buffer, got, chan->left, chan->right);
             }
         });
-    }
 
-    if (mixer->filter_list_size > 0)
+    if (mixer->biquad_list != NULL)
     {
-        for (int i = 0; i < mixer->filter_list_size; i++)
-        {
-            if (*(mixer->filter_list + i) == NULL)
-                continue;
-
-            for (int e = 0; e < size; e += 2)
+        ITER_LINKED_UNBOX(mixer->biquad_list, BiQuadEntry *, bq,
             {
-                BiQuad(abuf + e, abuf + e + 1, *(mixer->filter_list + i));
-            }
-        }
+                for (int e = 0; e < size; e += 2)
+                {
+                    BiQuad(abuf + e, abuf + e + 1, &(bq->filter));
+                }
+            });
 
-        MixAudio((sample_t*)put, abuf, size, 1.0f, 1.0f);
+        MixAudio((sample_t *)put, abuf, size, 1.0f, 1.0f);
     }
 
     MixerUnlock(mixer);

@@ -18,10 +18,16 @@
 /* whatever sample type you want */
 typedef float smp_type;
 
-/* this holds the data required to update samples thru a filter */
 typedef struct
 {
     smp_type a0, a1, a2, a3, a4;
+}
+biquad_coeff;
+
+/* this holds the data required to update samples thru a filter */
+typedef struct
+{
+    biquad_coeff coeff;
     smp_type x1l, x2l, y1l, y2l;
     smp_type x1r, x2r, y1r, y2r;
 }
@@ -41,9 +47,8 @@ enum biquad_type
     APF /* all pass filter */
 };
 
-void BiQuad(sample_t *l, sample_t *r, biquad * b);
-DLLAPI biquad *BiQuadNew(enum biquad_type type, double dbGain, /* gain of filter */
+void BiQuad(sample_t *l, sample_t *r, biquad *b);
+DLLAPI void BiQuadUpdate(biquad_coeff *b, enum biquad_type type, double dbGain, /* gain of filter */
                          double freq,                     /* center frequency */
                          double srate,                    /* sampling rate */
                          double q);                       /* bandwidth */
-DLLAPI void BiQuadFree(biquad *filter);

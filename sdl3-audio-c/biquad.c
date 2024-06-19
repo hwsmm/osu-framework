@@ -23,8 +23,8 @@ http://www.smartelectronix.com/musicdsp/text/filters005.txt
 #include <stdlib.h>
 
 #define biquad_internal(lr, res, smp) \
-    res = b->a0 * smp + b->a1 * b->x1##lr + b->a2 * b->x2##lr - \
-          b->a3 * b->y1##lr - b->a4 * b->y2##lr; \
+    res = b->coeff.a0 * smp + b->coeff.a1 * b->x1##lr + b->coeff.a2 * b->x2##lr - \
+          b->coeff.a3 * b->y1##lr - b->coeff.a4 * b->y2##lr; \
     b->x2##lr = b->x1##lr; \
     b->x1##lr = smp; \
     b->y2##lr = b->y1##lr; \
@@ -56,10 +56,9 @@ void BiQuad(sample_t *left, sample_t *right, biquad * b)
 }
 
 /* sets up a BiQuad Filter */
-DLLAPI biquad *BiQuadNew(enum biquad_type type, double dbGain, double freq,
+DLLAPI void BiQuadUpdate(biquad_coeff *b, enum biquad_type type, double dbGain, double freq,
                          double srate, double q)
 {
-    biquad *b;
     double A, omega, sn, cs, alpha, beta;
     double a0, a1, a2, b0, b1, b2;
 
@@ -146,12 +145,8 @@ DLLAPI biquad *BiQuadNew(enum biquad_type type, double dbGain, double freq,
         a2 = 1 - alpha;
         break;
     default:
-        return NULL;
+        return;
     }
-
-    b = malloc(sizeof(biquad));
-    if (b == NULL)
-        return NULL;
 
     /* precompute the coefficients */
     b->a0 = (float)(b0 /a0);
@@ -159,16 +154,5 @@ DLLAPI biquad *BiQuadNew(enum biquad_type type, double dbGain, double freq,
     b->a2 = (float)(b2 /a0);
     b->a3 = (float)(a1 /a0);
     b->a4 = (float)(a2 /a0);
-
-    /* zero initial samples */
-    b->x1l = b->x2l = b->x1r = b->x2r = 0;
-    b->y1l = b->y2l = b->y1r = b->y2r = 0;
-
-    return b;
 }
 /* crc==3062280887, version==4, Sat Jul  7 00:03:23 2001 */
-
-DLLAPI void BiQuadFree(biquad *filter)
-{
-    free(filter);
-}

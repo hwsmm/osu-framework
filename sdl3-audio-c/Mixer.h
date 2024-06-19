@@ -8,11 +8,19 @@
 
 typedef struct
 {
+    int priority;
+    biquad filter;
+} BiQuadEntry;
+
+typedef struct
+{
     Node *track_list;
     Node *sample_list;
 
     biquad **filter_list;
     int filter_list_size;
+
+    Node *biquad_list;
 
     mutex_t mutex;
 
@@ -32,7 +40,7 @@ DLLAPI int RemoveTrack(Mixer *mixer, Track *channel);
 DLLAPI int AddSample(Mixer *mixer, Sample *channel);
 DLLAPI int RemoveSample(Mixer *mixer, Sample *channel);
 
-DLLAPI void ReplaceFilterList(Mixer *mixer, biquad **filter_list, int list_size);
-DLLAPI void RemoveFilter(Mixer *mixer, int index);
+DLLAPI BiQuadEntry *ApplyBiquadFilter(Mixer *mixer, BiQuadEntry *entry, biquad_coeff *param, int priority);
+DLLAPI int RemoveBiquadFilter(Mixer *mixer, BiQuadEntry *entry);
 
 void MixerFillAudio(Mixer *mixer, uint8_t *buffer, int size);

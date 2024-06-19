@@ -55,10 +55,10 @@ namespace osu.Framework.Audio
         public static extern int RemoveSample(IntPtr mixer, IntPtr channel);
 
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void ReplaceFilterList(IntPtr mixer, IntPtr* filter_list, int list_size);
+        public static extern IntPtr ApplyBiquadFilter(IntPtr mixer, IntPtr entry, IntPtr param, int priority);
 
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl)]
-        public static extern void RemoveFilter(IntPtr mixer, int index);
+        public static extern int RemoveBiquadFilter(IntPtr mixer, IntPtr entry);
 
         // BIQUAD
 
@@ -75,8 +75,14 @@ namespace osu.Framework.Audio
             APF /* all pass filter */
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct BiQuadCoeff
+        {
+            private float a0, a1, a2, a3, a4;
+        }
+
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr BiQuadNew(BiQuadType type, double dbGain, double freq, double srate, double q);
+        public static extern void BiQuadUpdate(IntPtr b, BiQuadType type, double dbGain, double freq, double srate, double q);
 
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl)]
         public static extern void BiQuadFree(IntPtr filter);
