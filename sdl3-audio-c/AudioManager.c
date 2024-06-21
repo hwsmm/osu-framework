@@ -66,7 +66,7 @@ DLLAPI SDL_AudioDeviceID OpenAudioDevice(AudioManager *manager)
     memset(&audio_spec, 0, sizeof(SDL_AudioSpec));
     GetAudioFormat(&(audio_spec.freq), &(audio_spec.channels), &(audio_spec.format));
 
-    manager->audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_OUTPUT, &audio_spec, AudioCallback, manager);
+    manager->audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &audio_spec, AudioCallback, manager);
 
     if (manager->audio_stream == NULL)
         return 0;

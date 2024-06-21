@@ -20,7 +20,7 @@ typedef float smp_type;
 
 typedef struct
 {
-    smp_type a0, a1, a2, a3, a4;
+    float a0, a1, a2, a3, a4;
 }
 biquad_coeff;
 
@@ -28,8 +28,7 @@ biquad_coeff;
 typedef struct
 {
     biquad_coeff coeff;
-    smp_type x1l, x2l, y1l, y2l;
-    smp_type x1r, x2r, y1r, y2r;
+    smp_type x1, x2, y1, y2;
 }
 biquad;
 
@@ -47,7 +46,22 @@ enum biquad_type
     APF /* all pass filter */
 };
 
-void BiQuad(sample_t *l, sample_t *r, biquad *b);
+inline smp_type BiQuad(smp_type sample, biquad * b)
+{
+    smp_type result;
+    
+    result = b->coeff.a0 * sample + b->coeff.a1 * b->x1 + b->coeff.a2 * b->x2 -
+             b->coeff.a3 * b->y1 - b->coeff.a4 * b->y2;
+    
+    b->x2 = b->x1;
+    b->x1 = sample;
+    
+    b->y2 = b->y1;
+    b->y1 = result;
+    
+    return result;
+}
+
 DLLAPI void BiQuadUpdate(biquad_coeff *b, enum biquad_type type, double dbGain, /* gain of filter */
                          double freq,                     /* center frequency */
                          double srate,                    /* sampling rate */

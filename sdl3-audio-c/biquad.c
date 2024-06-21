@@ -22,39 +22,6 @@ http://www.smartelectronix.com/musicdsp/text/filters005.txt
 #include "biquad.h"
 #include <stdlib.h>
 
-#define biquad_internal(lr, res, smp) \
-    res = b->coeff.a0 * smp + b->coeff.a1 * b->x1##lr + b->coeff.a2 * b->x2##lr - \
-          b->coeff.a3 * b->y1##lr - b->coeff.a4 * b->y2##lr; \
-    b->x2##lr = b->x1##lr; \
-    b->x1##lr = smp; \
-    b->y2##lr = b->y1##lr; \
-    b->y1##lr = res;
-    
-/* Below this would be biquad.c */
-/* Computes a BiQuad filter on a sample */
-void BiQuad(sample_t *left, sample_t *right, biquad * b)
-{
-    smp_type sample;
-    
-#ifndef FLOAT_SAMPLE
-    smp_type result;
-    
-    sample = ToFloat(*left);
-    biquad_internal(l, result, sample);
-    *left = FromFloat(result);
-    
-    sample = ToFloat(*right);
-    biquad_internal(r, result, sample);
-    *right = FromFloat(result);
-#else
-    sample = *left;
-    biquad_internal(l, *left, sample);
-    
-    sample = *right;
-    biquad_internal(r, *right, sample);
-#endif
-}
-
 /* sets up a BiQuad Filter */
 DLLAPI void BiQuadUpdate(biquad_coeff *b, enum biquad_type type, double dbGain, double freq,
                          double srate, double q)

@@ -259,9 +259,9 @@ void MixerFillAudio(Mixer *mixer, uint8_t *put, int size)
     {
         ITER_LINKED_UNBOX(mixer->biquad_list, BiQuadEntry *, bq,
             {
-                for (int e = 0; e < size; e += 2)
+                for (int e = 0; e < size; e++)
                 {
-                    BiQuad(abuf + e, abuf + e + 1, &(bq->filter));
+                    *(abuf + e) = BiQuad(*(abuf + e), &(bq->filter));
                 }
             });
 
