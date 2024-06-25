@@ -656,8 +656,8 @@ namespace osu.Framework.Platform.SDL3
 
                     ensureWindowOnDisplay(display);
 
-                    SDL_SetWindowFullscreenMode(SDLWindowHandle, &closestMode);
                     SDL_SetWindowFullscreen(SDLWindowHandle, SDL_bool.SDL_TRUE);
+                    SDL_SetWindowFullscreenMode(SDLWindowHandle, &closestMode);
                     break;
 
                 case WindowState.FullscreenBorderless:
