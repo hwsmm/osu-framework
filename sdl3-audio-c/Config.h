@@ -28,8 +28,13 @@ typedef SDL_Mutex *mutex_t;
 
 #define LockMutex(mutex) SDL_LockMutex(mutex)
 #define UnlockMutex(mutex) SDL_UnlockMutex(mutex)
+
+#define MemoryBarrierRelease() SDL_MemoryBarrierReleaseFunction()
+#define MemoryBarrierAcquire() SDL_MemoryBarrierAcquireFunction()
+
 #else
 #include <threads.h>
+#include <stdatomic.h>
 
 typedef mtx_t mutex_t;
 
@@ -38,6 +43,10 @@ typedef mtx_t mutex_t;
 
 #define LockMutex(mutex) mtx_lock(&(mutex))
 #define UnlockMutex(mutex) mtx_unlock(&(mutex))
+
+#define MemoryBarrierRelease() atomic_thread_fence(memory_order_release)
+#define MemoryBarrierAcquire() atomic_thread_fence(memory_order_acquire)
+
 #endif
 
 #define DEFAULT_FREQUENCY 44100

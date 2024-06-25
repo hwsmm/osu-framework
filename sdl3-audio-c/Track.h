@@ -32,7 +32,7 @@ typedef struct
     volatile int prepare_size;
 } Track;
 
-#define TrackLen(track) (track->put_size / sizeof(sample_t))
+#define TrackLen(track) (atomic_load_explicit(&(track->put_size), memory_order_relaxed) / sizeof(sample_t))
 #define CheckRate(track) (track->st_wrap.tempo != 1 || track->st_wrap.rfreq != 1)
 
 DLLAPI Track *CreateTrack();

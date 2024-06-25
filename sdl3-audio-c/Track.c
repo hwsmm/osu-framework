@@ -97,19 +97,21 @@ DLLAPI int TrackPutData(Track *track, sample_t *audio, size_t size)
 {
     if (track->audio == NULL)
         return -1;
+        
+    // I don't think there is a need for this since the thread that runs this code is only the decoding thread, but here it is
+    size_t cursize = atomic_load_explicit(&(track->put_size), memory_order_relaxed);
 
-    if (track->put_size + size > track->size)
+    if (cursize + size > track->size)
     {
-        if (!TrackInitBuffer(track, track->put_size + size + frequency * sizeof(sample_t) * channels))
+        if (!TrackInitBuffer(track, cursize + size + frequency * sizeof(sample_t) * channels))
             return -2;
     }
 
     memcpy(track->audio + TrackLen(track), audio, size);
 
-    // may use stdatomic.h atomic_thread_fence
-    SDL_MemoryBarrierReleaseFunction();
-
-    track->put_size += size;
+    MemoryBarrierRelease();
+    
+    atomic_store_explicit(&(track->put_size), cursize + size, memory_order_relaxed);
 
     return 1;
 }
@@ -185,9 +187,9 @@ static int TrackRawFillAudio(Track *track, sample_t *buffer, int max_size)
         goto exit;
 
     size_t len = TrackLen(track);
-
+        
     if (!track->is_loaded)
-        SDL_MemoryBarrierAcquireFunction();
+        MemoryBarrierAcquire();
 
     if (track->save_seek > 0)
     {
