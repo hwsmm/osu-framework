@@ -90,18 +90,6 @@ DLLAPI void CloseAudioDevice(AudioManager *manager)
     }
 }
 
-LogFunction logger;
-
-DLLAPI void SetLoggerFunction(LogFunction log)
-{
-    logger = log;
-}
-
-void AudioLog(int level, char* message)
-{
-    logger(level, message);
-}
-
 DLLAPI int AddMixer(AudioManager *manager, Mixer *mixer)
 {
     if (manager->audio_stream != NULL)
