@@ -98,7 +98,7 @@ DLLAPI int TrackPutData(Track *track, sample_t *audio, size_t size)
     if (track->audio == NULL)
         return -1;
         
-    // I don't think there is a need for this since the thread that runs this code is only the decoding thread, but here it is
+    // I don't think there is a need for this since decoding thread only writes to this var, but here it is
     size_t cursize = atomic_load_explicit(&(track->put_size), memory_order_relaxed);
 
     if (cursize + size > track->size)
