@@ -213,7 +213,7 @@ void MixerFillAudio(Mixer *mixer, uint8_t *put, int size)
 
     sample_t *abuf = (sample_t*)put;
 
-    int got;
+    int got, offset;
 
     MixerLock(mixer);
 
@@ -236,33 +236,34 @@ void MixerFillAudio(Mixer *mixer, uint8_t *put, int size)
     }
 
     size /= sizeof(sample_t);
+    sample_t *audio;
     
-    ITER_LINKED_UNBOX(mixer->track_list, Track *, chan,
+    ITER_LINKED_UNBOX(mixer->track_list, Track*, chan,
         {
             if (chan->playing)
             {
-                got = TrackFillAudio(chan, mixer->buffer, size);
-                MixAudio(abuf, mixer->buffer, got, chan->left, chan->right);
+                got = TrackReturnAudio(chan, mixer->buffer, size, &audio);
+                MixAudio(abuf, audio, got, chan->left, chan->right);
             }
         });
     
-    ITER_LINKED_UNBOX(mixer->sample_list, Sample *, chan,
+    ITER_LINKED_UNBOX(mixer->sample_list, Sample*, chan,
         {
-            if (chan->playing)
+            offset = 0;
+            while (chan->playing && offset < size)
             {
-                got = SampleFillAudio(chan, mixer->buffer, size);
-                MixAudio(abuf, mixer->buffer, got, chan->left, chan->right);
+                got = SampleReturnAudio(chan, mixer->buffer, size - offset, &audio);
+                MixAudio(abuf + offset, audio, got, chan->left, chan->right);
+                offset += got;
             }
         });
 
     if (mixer->biquad_list != NULL)
     {
-        ITER_LINKED_UNBOX(mixer->biquad_list, BiQuadEntry *, bq,
+        ITER_LINKED_UNBOX(mixer->biquad_list, BiQuadEntry*, bq,
             {
                 for (int e = 0; e < size; e++)
-                {
                     *(abuf + e) = BiQuad(*(abuf + e), &(bq->filter));
-                }
             });
 
         MixAudio((sample_t *)put, abuf, size, 1.0f, 1.0f);

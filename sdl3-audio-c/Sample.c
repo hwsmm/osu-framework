@@ -56,7 +56,7 @@ DLLAPI double SampleGetFrequency(Sample *sample)
     return sample->rfreq;
 }
 
-static int SampleRawFillAudio(Sample *sample, sample_t *buffer, int max_size)
+static int SampleRawReturnAudio(Sample *sample, int max_size, sample_t **audio)
 {
     if (sample->done)
         return 0;
@@ -75,39 +75,24 @@ static int SampleRawFillAudio(Sample *sample, sample_t *buffer, int max_size)
         sample->done = false;
     }
 
-    int i = 0;
+    int remain = sample->size - sample->position;
+    int put = max_size;
+    if (put > remain)
+        put = remain;
 
-    while (i < max_size)
+    *audio = sample->audio + sample->position;
+    
+    sample->position += put;
+
+    if (sample->position >= sample->size)
     {
-        int remain = sample->size - sample->position;
-        int put = max_size - i;
-        if (put > remain)
-            put = remain;
-
-        if (buffer != NULL)
-            memcpy(buffer + i, sample->audio + sample->position, put * sizeof(sample_t));
-
-        sample->position += put;
-        i += put;
-
-        if (sample->position >= sample->size)
-        {
-            if (sample->loop)
-            {
-                sample->position = 0;
-
-                if (buffer == NULL)
-                    break; // This is called from resampler callback!
-            }
-            else
-            {
-                sample->done = true;
-                break;
-            }
-        }
+        if (sample->loop)
+            sample->position = 0;
+        else
+            sample->done = true;
     }
 
-    return i;
+    return put;
 }
 
 static long ResampleCallback(void *cb_data, float **data)
@@ -115,11 +100,11 @@ static long ResampleCallback(void *cb_data, float **data)
     Sample *sample = (Sample*)cb_data;
     const int wanted = 4096;
 
-    sample_t *backup = sample->audio + sample->position;
-    int got = SampleRawFillAudio(sample, NULL, wanted);
+    sample_t *audio = NULL;
+    int got = SampleRawReturnAudio(sample, wanted, &audio);
 
 #ifdef FLOAT_SAMPLE
-    *data = backup;
+    *data = audio;
 #else
     if (sample->resample_buffer == NULL)
         sample->resample_buffer = (float *)malloc(wanted * sizeof(float));
@@ -127,7 +112,7 @@ static long ResampleCallback(void *cb_data, float **data)
     if (sample->resample_buffer == NULL)
         return 0;
 
-    src_short_to_float_array(backup, sample->resample_buffer, got);
+    src_short_to_float_array(audio, sample->resample_buffer, got);
 
     *data = sample->resample_buffer;
 #endif
@@ -197,19 +182,19 @@ DLLAPI bool SampleIsDone(Sample *sample)
     return sample->done;
 }
 
-int SampleFillAudio(Sample *sample, sample_t *buffer, int max_size)
+int SampleReturnAudio(Sample *sample, sample_t *temp_buf, int max_size, sample_t **audio)
 {
     double rfreq = sample->rfreq;
     int got = 0;
     
     if (rfreq == 1.0 || sample->resample == NULL)
     {
-        got = SampleRawFillAudio(sample, buffer, max_size);
+        got = SampleRawReturnAudio(sample, max_size, audio);
     }
     else if (rfreq > 0 && sample->resample != NULL)
     {
 #ifdef FLOAT_SAMPLE
-        got = (int)src_callback_read(sample->resample, 1.0 / rfreq, max_size / channels, buffer) * channels;
+        got = (int)src_callback_read(sample->resample, 1.0 / rfreq, max_size / channels, temp_buf) * channels;
 #else
         if (max_size > sample->resample_store_size)
         {
@@ -225,8 +210,9 @@ int SampleFillAudio(Sample *sample, sample_t *buffer, int max_size)
 
         got = (int)src_callback_read(sample->resample, 1.0 / rfreq, max_size / channels, sample->resample_store) * channels;
 
-        src_float_to_short_array(sample->resample_store, buffer, got);
+        src_float_to_short_array(sample->resample_store, temp_buf, got);
 #endif
+        *audio = temp_buf;
     }
     
     if (got < max_size && sample->done)

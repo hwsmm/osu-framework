@@ -58,5 +58,5 @@ DLLAPI void TrackSetPosition(Track *track, double position);
 
 DLLAPI void UpdateTrack(Track *track);
 
-int TrackFillAudio(Track *track, sample_t *buffer, int max_size);
+int TrackReturnAudio(Track *track, sample_t *temp_buf, int max_size, sample_t **audio);
 DLLAPI int TrackPeek(Track *track, float *buffer, int buffer_size, double position);

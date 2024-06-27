@@ -53,4 +53,4 @@ DLLAPI bool SampleGetLoop(Sample *sample);
 DLLAPI void SampleSetLoop(Sample *sample, bool loop);
 DLLAPI bool SampleIsDone(Sample *sample);
 
-int SampleFillAudio(Sample *sample, sample_t *buffer, int max_size);
+int SampleReturnAudio(Sample *sample, sample_t *temp_buf, int max_size, sample_t **audio);

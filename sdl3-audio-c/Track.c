@@ -179,7 +179,7 @@ DLLAPI void TrackSetFreqTempo(Track *track, double freq, double tempo)
     TrackUnlock(track);
 }
 
-static int TrackRawFillAudio(Track *track, sample_t *buffer, int max_size)
+static int TrackRawReturnAudio(Track *track, sample_t *temp_buf, int max_size, sample_t **audio)
 {
     int read = 0;
 
@@ -209,12 +209,14 @@ static int TrackRawFillAudio(Track *track, sample_t *buffer, int max_size)
             goto exit;
     }
 
-    if (track->reverse_playback)
+    if (track->reverse_playback && temp_buf != NULL)
     {
+        *audio = temp_buf;
+        
         for (; read < max_size; read += 2)
         {
-            *(buffer + read + 1) = *(track->audio + track->position--);
-            *(buffer + read) = *(track->audio + track->position);
+            *(temp_buf + read + 1) = *(track->audio + track->position--);
+            *(temp_buf + read) = *(track->audio + track->position);
 
             if (track->position <= 0)
                 break;
@@ -227,8 +229,7 @@ static int TrackRawFillAudio(Track *track, sample_t *buffer, int max_size)
         size_t remain = len - track->position;
         read = remain > (size_t)max_size ? max_size : (int)remain;
 
-        if (buffer != NULL)
-            memcpy(buffer, track->audio + track->position, read * sizeof(sample_t));
+        *audio = track->audio + track->position;
 
         track->position += read;
     }
@@ -252,12 +253,12 @@ static void FillNeededSamplesToSt(Track *track)
     {
         cur = (int)ceil(((track->prepare_size - cur) / channels) * track->st_wrap.rfreq * track->st_wrap.tempo) * channels;
 
-        size_t backup = track->position;
-        cur = TrackRawFillAudio(track, NULL, cur);
+        sample_t *audio;
+        cur = TrackRawReturnAudio(track, NULL, cur, &audio);
         if (cur <= 0)
             break;
 
-        StPrepareAudio(&(track->st_wrap), track->audio + backup, cur); // this doesn't support reverse playback
+        StPrepareAudio(&(track->st_wrap), audio, cur); // this doesn't support reverse playback
     }
 
     if (!track->st_wrap.done_filling && track->done)
@@ -327,7 +328,7 @@ DLLAPI void TrackSetPosition(Track *track, double position)
     TrackUnlock(track);
 }
 
-int TrackFillAudio(Track *track, sample_t *buffer, int max_size)
+int TrackReturnAudio(Track *track, sample_t *temp_buf, int max_size, sample_t **audio)
 {
     if (track->put_size == 0 && !track->is_loaded)
         return 0;
@@ -344,13 +345,14 @@ int TrackFillAudio(Track *track, sample_t *buffer, int max_size)
     {
         track->prepare_size = max_size;
         FillNeededSamplesToSt(track);
-        ret = StFillAudio(&(track->st_wrap), buffer, max_size);
+        ret = StFillAudio(&(track->st_wrap), temp_buf, max_size);
+        *audio = temp_buf;
 
         track->playing = !track->st_wrap.done_playing;
     }
     else
     {
-        ret = TrackRawFillAudio(track, buffer, max_size);
+        ret = TrackRawReturnAudio(track, temp_buf, max_size, audio);
 
         track->playing = !track->done;
     }
