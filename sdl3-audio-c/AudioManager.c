@@ -2,16 +2,42 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <execinfo.h>
 
 int frequency;
 int channels;
 SDL_AudioFormat format;
+
+static void SdlLogIn(void *userdata, int category, SDL_LogPriority priority, const char *message)
+{
+    SDL_LogCategory cat = category;
+    if (cat != SDL_LOG_CATEGORY_ERROR)
+    {
+        fprintf(stderr, "SDL log: %s\n", message);
+        return;
+    }
+    
+    void *bt[1024];
+    int bt_size = backtrace(bt, 1024);
+    char **bt_syms = backtrace_symbols(bt, bt_size);
+    
+    fprintf(stderr, "BACKTRACE BELOW - SDL error log: %s\n", message);
+    for (int i = 0; i < bt_size; i++)
+    {
+        fprintf(stderr, "%d: %s\n", i, *(bt_syms + i));
+    }
+    fputs("BACKTRACE FINISH\n", stderr);
+    
+    free(bt_syms);
+}
 
 DLLAPI AudioManager *AllocAudioManager()
 {
     AudioManager *manager = (AudioManager*)calloc(1, sizeof(AudioManager));
     if (manager == NULL)
         return NULL;
+        
+    SDL_SetLogOutputFunction(SdlLogIn, NULL);
 
     return manager;
 }
