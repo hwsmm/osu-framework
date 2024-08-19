@@ -21,8 +21,6 @@ namespace osu.Framework.Android
         {
             base.Create();
 
-            SafeAreaPadding.BindTo(AndroidGameActivity.Surface.SafeAreaPadding);
-
             // Android SDL doesn't receive these events at start, so it never receives focus until it comes back from background
             ((BindableBool)CursorInWindow).Value = true;
             Focused = true;

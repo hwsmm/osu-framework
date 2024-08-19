@@ -10,6 +10,7 @@ using System.Drawing;
 using System.Linq;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
+using osu.Framework.Graphics;
 using osu.Framework.Logging;
 using osuTK;
 using SDL;
@@ -516,6 +517,10 @@ namespace osu.Framework.Platform.SDL3
 
                 case SDL_EventType.SDL_EVENT_WINDOW_CLOSE_REQUESTED:
                     break;
+
+                case SDL_EventType.SDL_EVENT_WINDOW_SAFE_AREA_CHANGED:
+                    updateSafeArea();
+                    break;
             }
 
             // displays can change without a SDL_DISPLAYEVENT being sent, eg. changing resolution.
@@ -806,6 +811,24 @@ namespace osu.Framework.Platform.SDL3
         /// The size of the borderless window's draw area.
         /// </returns>
         protected virtual Size SetBorderless(Display display) => throw new PlatformNotSupportedException();
+
+        private unsafe void updateSafeArea()
+        {
+            SDL_Rect safeArea;
+            SDL_GetWindowSafeArea(SDLWindowHandle, &safeArea);
+
+            // SDL3Window.Size might have not updated yet
+            int w, h;
+            SDL_GetWindowSize(SDLWindowHandle, &w, &h);
+
+            SafeAreaPadding.Value = new MarginPadding
+            {
+                Top = safeArea.y,
+                Left = safeArea.x,
+                Bottom = h - (safeArea.y + safeArea.h),
+                Right = w - (safeArea.x + safeArea.w),
+            };
+        }
 
         #endregion
 
