@@ -395,13 +395,14 @@ namespace osu.Framework.Graphics.Video
                 }
 
                 codecContext = ffmpeg.avcodec_alloc_context3(decoder.Pointer);
-                codecContext->pkt_timebase = stream->time_base;
 
                 if (codecContext == null)
                 {
                     Logger.Log($"Couldn't allocate codec context. Codec: {decoder.Name}");
                     continue;
                 }
+
+                codecContext->pkt_timebase = stream->time_base;
 
                 int paramCopyResult = ffmpeg.avcodec_parameters_to_context(codecContext, &codecParams);
 
