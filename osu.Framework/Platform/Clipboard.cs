@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Threading.Tasks;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -32,7 +33,11 @@ namespace osu.Framework.Platform
         /// Copy the image to the clipboard.
         /// </summary>
         /// <param name="image">The image to copy to the clipboard</param>
-        /// <returns>Whether the image was successfully copied or not</returns>
-        public abstract bool SetImage(Image image);
+        public abstract void SetImage(Image image);
+
+        public virtual Task<string?> GetTextAsync() => Task.FromResult(GetText());
+
+        public virtual Task<Image<TPixel>?> GetImageAsync<TPixel>()
+            where TPixel : unmanaged, IPixel<TPixel> => Task.FromResult(GetImage<TPixel>());
     }
 }

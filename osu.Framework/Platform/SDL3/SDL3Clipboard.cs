@@ -10,7 +10,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using osu.Framework.Allocation;
+using osu.Framework.Extensions;
 using osu.Framework.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
@@ -18,7 +20,7 @@ using static SDL.SDL3;
 
 namespace osu.Framework.Platform.SDL3
 {
-    public class SDL3Clipboard : Clipboard
+    public class SDL3Clipboard : SDLClipboard
     {
         /// <summary>
         /// Supported formats for decoding images from the clipboard.
@@ -40,11 +42,13 @@ namespace osu.Framework.Platform.SDL3
         // SDL cannot differentiate between string.Empty and no text (eg. empty clipboard or an image)
         // doesn't matter as text editors don't really allow copying empty strings.
         // assume that empty text means no text.
-        public override string? GetText() => SDL_HasClipboardText() ? SDL_GetClipboardText() : null;
+        public override Task<string?> GetTextAsync() => EnqueueAction(() => SDL_HasClipboardText() ? SDL_GetClipboardText() : null);
 
-        public override void SetText(string text) => SDL_SetClipboardText(text);
+        public override string? GetText() => GetTextAsync().GetResultSafely();
 
-        public override Image<TPixel>? GetImage<TPixel>()
+        public override void SetText(string text) => EnqueueAction(() => SDL_SetClipboardText(text));
+
+        public override Task<Image<TPixel>?> GetImageAsync<TPixel>() => EnqueueAction(() =>
         {
             foreach (string mimeType in supportedImageMimeTypes)
             {
@@ -56,9 +60,11 @@ namespace osu.Framework.Platform.SDL3
             }
 
             return null;
-        }
+        });
 
-        public override bool SetImage(Image image)
+        public override Image<TPixel>? GetImage<TPixel>() => GetImageAsync<TPixel>().GetResultSafely();
+
+        public override void SetImage(Image image)
         {
             ReadOnlyMemory<byte> memory;
 
@@ -74,7 +80,7 @@ namespace osu.Framework.Platform.SDL3
                 memory = new ReadOnlyMemory<byte>(stream.GetBuffer(), 0, (int)stream.Length);
             }
 
-            return trySetData(imageFormat.DefaultMimeType, () => memory);
+            EnqueueAction(() => trySetData(imageFormat.DefaultMimeType, () => memory));
         }
 
         /// <summary>

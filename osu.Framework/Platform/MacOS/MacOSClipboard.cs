@@ -30,7 +30,7 @@ namespace osu.Framework.Platform.MacOS
 
         public override void SetText(string text) => setToPasteboard(NSString.FromString(text).Handle);
 
-        public override bool SetImage(Image image)
+        public override void SetImage(Image image)
         {
             using var stream = new MemoryStream();
             image.SaveAsTiff(stream);
@@ -39,7 +39,7 @@ namespace osu.Framework.Platform.MacOS
             {
                 var nsData = NSData.FromBytes(stream.ToArray());
                 using var nsImage = NSImage.InitWithData(nsData);
-                return setToPasteboard(nsImage.Handle);
+                setToPasteboard(nsImage.Handle);
             }
         }
 

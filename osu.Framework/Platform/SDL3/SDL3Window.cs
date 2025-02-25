@@ -15,6 +15,7 @@ using osu.Framework.Logging;
 using osu.Framework.Threading;
 using SDL;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using Image = SixLabors.ImageSharp.Image;
 using Point = System.Drawing.Point;
@@ -58,6 +59,23 @@ namespace osu.Framework.Platform.SDL3
         /// Scheduler for actions to run at the end of the current event loop.
         /// </summary>
         protected readonly Scheduler EventScheduler = new Scheduler();
+
+        private SDL3Clipboard? clipboard;
+
+        // PNG works well on Linux
+        public SDLClipboard Clipboard
+        {
+            get
+            {
+                if (clipboard == null)
+                {
+                    clipboard = new SDL3Clipboard(PngFormat.Instance);
+                    Update += clipboard.Update;
+                }
+
+                return clipboard;
+            }
+        }
 
         private string title = string.Empty;
 
@@ -471,7 +489,7 @@ namespace osu.Framework.Platform.SDL3
         /// <param name="action">The <see cref="Action"/> to execute.</param>
         protected void ScheduleEvent(Action action) => EventScheduler.Add(action, false);
 
-        protected void ScheduleCommand(Action action) => commandScheduler.Add(action, false);
+        protected ScheduledDelegate? ScheduleCommand(Action action) => commandScheduler.Add(action, false);
 
         private const int events_per_peep = 64;
         private readonly SDL_Event[] events = new SDL_Event[events_per_peep];

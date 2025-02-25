@@ -14,6 +14,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Caching;
 using osu.Framework.Development;
+using osu.Framework.Extensions;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Extensions.PlatformActionExtensions;
 using osu.Framework.Graphics.Containers;
@@ -302,7 +303,7 @@ namespace osu.Framework.Graphics.UserInterface
                         // This is currently only happening on iOS since it relies on a hidden UITextField for software keyboard.
                         return true;
 
-                    InsertString(clipboard.GetText());
+                    clipboard.GetTextAsync().ContinueWith(t => Schedule(InsertString, t.GetResultSafely()));
                     return true;
 
                 case PlatformAction.SelectAll:

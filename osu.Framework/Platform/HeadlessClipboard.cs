@@ -26,11 +26,10 @@ namespace osu.Framework.Platform
 
         public override Image<TPixel>? GetImage<TPixel>() => clipboardImage?.CloneAs<TPixel>();
 
-        public override bool SetImage(Image image)
+        public override void SetImage(Image image)
         {
             clipboardText = null;
             clipboardImage = image;
-            return true;
         }
     }
 }

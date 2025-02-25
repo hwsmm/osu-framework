@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using osu.Framework.Input;
 using osu.Framework.Input.Handlers;
@@ -11,9 +12,6 @@ using osu.Framework.Input.Handlers.Mouse;
 using osu.Framework.Input.Handlers.Pen;
 using osu.Framework.Input.Handlers.Tablet;
 using osu.Framework.Input.Handlers.Touch;
-using osu.Framework.Platform.SDL2;
-using osu.Framework.Platform.SDL3;
-using SixLabors.ImageSharp.Formats.Png;
 
 namespace osu.Framework.Platform
 {
@@ -37,9 +35,12 @@ namespace osu.Framework.Platform
         }
 
         protected override Clipboard CreateClipboard()
-            => FrameworkEnvironment.UseSDL3
-                ? new SDL3Clipboard(PngFormat.Instance) // PNG works well on linux
-                : new SDL2Clipboard();
+        {
+            if (Window is ISDLWindow window)
+                return window.Clipboard;
+
+            throw new InvalidOperationException($"Create a window before calling {nameof(CreateClipboard)}");
+        }
 
         protected override IEnumerable<InputHandler> CreateAvailableInputHandlers()
         {

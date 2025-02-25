@@ -88,7 +88,7 @@ namespace osu.Framework.Platform.Windows
             });
         }
 
-        public override bool SetImage(Image image)
+        public override void SetImage(Image image)
         {
             using (var stream = new MemoryStream())
             {
@@ -98,7 +98,7 @@ namespace osu.Framework.Platform.Windows
                 int bitmapDataLength = (int)stream.Length - bitmap_file_header_length;
                 IntPtr unmanagedPointer = Marshal.AllocHGlobal(bitmapDataLength);
                 Marshal.Copy(stream.GetBuffer(), bitmap_file_header_length, unmanagedPointer, bitmapDataLength);
-                return setClipboard(unmanagedPointer, bitmapDataLength, cf_dib);
+                setClipboard(unmanagedPointer, bitmapDataLength, cf_dib);
             }
         }
 

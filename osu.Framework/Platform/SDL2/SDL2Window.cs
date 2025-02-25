@@ -57,6 +57,22 @@ namespace osu.Framework.Platform.SDL2
         /// </summary>
         protected readonly Scheduler EventScheduler = new Scheduler();
 
+        private SDL2Clipboard? clipboard;
+
+        public SDLClipboard Clipboard
+        {
+            get
+            {
+                if (clipboard == null)
+                {
+                    clipboard = new SDL2Clipboard();
+                    Update += clipboard.Update;
+                }
+
+                return clipboard;
+            }
+        }
+
         private string title = string.Empty;
 
         /// <summary>

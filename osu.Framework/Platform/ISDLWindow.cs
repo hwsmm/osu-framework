@@ -40,6 +40,8 @@ namespace osu.Framework.Platform
         void StopTextInput();
         void SetTextInputRect(RectangleF rectangle);
         void ResetIme();
+
+        SDLClipboard Clipboard { get; }
     }
 
     /// <summary>
