@@ -18,43 +18,16 @@ namespace osu.Framework.Platform.SDL3
     {
         private static readonly HashSet<(InputKey, Key, SDL_Keycode, SDL_Scancode)> key_mapping = new HashSet<(InputKey, Key, SDL_Keycode, SDL_Scancode)>
         {
-            (InputKey.Shift, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.Control, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.Alt, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.Super, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F25, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F26, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F27, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F28, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F29, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F30, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F31, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F32, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F33, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F34, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.F35, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.None, Key.Unknown, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.None, Key.Comma, SDL_Keycode.SDLK_KP_COMMA, SDL_Scancode.SDL_SCANCODE_KP_COMMA),
-            (InputKey.None, Key.Tab, SDL_Keycode.SDLK_KP_TAB, SDL_Scancode.SDL_SCANCODE_KP_TAB),
-            (InputKey.None, Key.BackSpace, SDL_Keycode.SDLK_KP_BACKSPACE, SDL_Scancode.SDL_SCANCODE_KP_BACKSPACE),
-            (InputKey.None, Key.A, SDL_Keycode.SDLK_KP_A, SDL_Scancode.SDL_SCANCODE_KP_A),
-            (InputKey.None, Key.B, SDL_Keycode.SDLK_KP_B, SDL_Scancode.SDL_SCANCODE_KP_B),
-            (InputKey.None, Key.C, SDL_Keycode.SDLK_KP_C, SDL_Scancode.SDL_SCANCODE_KP_C),
-            (InputKey.None, Key.D, SDL_Keycode.SDLK_KP_D, SDL_Scancode.SDL_SCANCODE_KP_D),
-            (InputKey.None, Key.E, SDL_Keycode.SDLK_KP_E, SDL_Scancode.SDL_SCANCODE_KP_E),
-            (InputKey.None, Key.F, SDL_Keycode.SDLK_KP_F, SDL_Scancode.SDL_SCANCODE_KP_F),
-            (InputKey.None, Key.Space, SDL_Keycode.SDLK_KP_SPACE, SDL_Scancode.SDL_SCANCODE_KP_SPACE),
-            (InputKey.None, Key.Clear, SDL_Keycode.SDLK_KP_CLEAR, SDL_Scancode.SDL_SCANCODE_KP_CLEAR),
             (InputKey.Enter, Key.Enter, SDL_Keycode.SDLK_RETURN, SDL_Scancode.SDL_SCANCODE_RETURN),
             (InputKey.Escape, Key.Escape, SDL_Keycode.SDLK_ESCAPE, SDL_Scancode.SDL_SCANCODE_ESCAPE),
             (InputKey.BackSpace, Key.BackSpace, SDL_Keycode.SDLK_BACKSPACE, SDL_Scancode.SDL_SCANCODE_BACKSPACE),
             (InputKey.Tab, Key.Tab, SDL_Keycode.SDLK_TAB, SDL_Scancode.SDL_SCANCODE_TAB),
             (InputKey.Space, Key.Space, SDL_Keycode.SDLK_SPACE, SDL_Scancode.SDL_SCANCODE_SPACE),
-            (InputKey.Quote, Key.Quote, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_APOSTROPHE),
+            (InputKey.Quote, Key.Quote, SDL_Keycode.SDLK_APOSTROPHE, SDL_Scancode.SDL_SCANCODE_APOSTROPHE),
             (InputKey.Comma, Key.Comma, SDL_Keycode.SDLK_COMMA, SDL_Scancode.SDL_SCANCODE_COMMA),
-            (InputKey.Minus, Key.Minus, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_MINUS),
-            (InputKey.Period, Key.Period, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_PERIOD),
-            (InputKey.Slash, Key.Slash, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_SLASH),
+            (InputKey.Minus, Key.Minus, SDL_Keycode.SDLK_MINUS, SDL_Scancode.SDL_SCANCODE_MINUS),
+            (InputKey.Period, Key.Period, SDL_Keycode.SDLK_PERIOD, SDL_Scancode.SDL_SCANCODE_PERIOD),
+            (InputKey.Slash, Key.Slash, SDL_Keycode.SDLK_SLASH, SDL_Scancode.SDL_SCANCODE_SLASH),
             (InputKey.Number0, Key.Number0, SDL_Keycode.SDLK_0, SDL_Scancode.SDL_SCANCODE_0),
             (InputKey.Number1, Key.Number1, SDL_Keycode.SDLK_1, SDL_Scancode.SDL_SCANCODE_1),
             (InputKey.Number2, Key.Number2, SDL_Keycode.SDLK_2, SDL_Scancode.SDL_SCANCODE_2),
@@ -65,12 +38,12 @@ namespace osu.Framework.Platform.SDL3
             (InputKey.Number7, Key.Number7, SDL_Keycode.SDLK_7, SDL_Scancode.SDL_SCANCODE_7),
             (InputKey.Number8, Key.Number8, SDL_Keycode.SDLK_8, SDL_Scancode.SDL_SCANCODE_8),
             (InputKey.Number9, Key.Number9, SDL_Keycode.SDLK_9, SDL_Scancode.SDL_SCANCODE_9),
-            (InputKey.Semicolon, Key.Semicolon, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_SEMICOLON),
+            (InputKey.Semicolon, Key.Semicolon, SDL_Keycode.SDLK_SEMICOLON, SDL_Scancode.SDL_SCANCODE_SEMICOLON),
             (InputKey.Plus, Key.Plus, SDL_Keycode.SDLK_EQUALS, SDL_Scancode.SDL_SCANCODE_EQUALS),
-            (InputKey.BracketLeft, Key.BracketLeft, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_LEFTBRACKET),
-            (InputKey.BackSlash, Key.BackSlash, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_BACKSLASH),
-            (InputKey.BracketRight, Key.BracketRight, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_RIGHTBRACKET),
-            (InputKey.Tilde, Key.Tilde, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_GRAVE),
+            (InputKey.BracketLeft, Key.BracketLeft, SDL_Keycode.SDLK_LEFTBRACKET, SDL_Scancode.SDL_SCANCODE_LEFTBRACKET),
+            (InputKey.BackSlash, Key.BackSlash, SDL_Keycode.SDLK_BACKSLASH, SDL_Scancode.SDL_SCANCODE_BACKSLASH),
+            (InputKey.BracketRight, Key.BracketRight, SDL_Keycode.SDLK_RIGHTBRACKET, SDL_Scancode.SDL_SCANCODE_RIGHTBRACKET),
+            (InputKey.Tilde, Key.Tilde, SDL_Keycode.SDLK_GRAVE, SDL_Scancode.SDL_SCANCODE_GRAVE),
             (InputKey.A, Key.A, SDL_Keycode.SDLK_A, SDL_Scancode.SDL_SCANCODE_A),
             (InputKey.B, Key.B, SDL_Keycode.SDLK_B, SDL_Scancode.SDL_SCANCODE_B),
             (InputKey.C, Key.C, SDL_Keycode.SDLK_C, SDL_Scancode.SDL_SCANCODE_C),
@@ -141,6 +114,40 @@ namespace osu.Framework.Platform.SDL3
             (InputKey.Keypad0, Key.Keypad0, SDL_Keycode.SDLK_KP_0, SDL_Scancode.SDL_SCANCODE_KP_0),
             (InputKey.KeypadPeriod, Key.KeypadPeriod, SDL_Keycode.SDLK_KP_PERIOD, SDL_Scancode.SDL_SCANCODE_KP_PERIOD),
             (InputKey.NonUSBackSlash, Key.NonUSBackSlash, SDL_Keycode.SDLK_UNKNOWN, SDL_Scancode.SDL_SCANCODE_NONUSBACKSLASH),
+            (InputKey.Menu, Key.Menu, SDL_Keycode.SDLK_MENU, SDL_Scancode.SDL_SCANCODE_MENU),
+            (InputKey.None, Key.Menu, SDL_Keycode.SDLK_APPLICATION, SDL_Scancode.SDL_SCANCODE_APPLICATION),
+            (InputKey.None, Key.Menu, SDL_Keycode.SDLK_MODE, SDL_Scancode.SDL_SCANCODE_MODE),
+            (InputKey.Mute, Key.Mute, SDL_Keycode.SDLK_MUTE, SDL_Scancode.SDL_SCANCODE_MUTE),
+            (InputKey.VolumeUp, Key.VolumeUp, SDL_Keycode.SDLK_VOLUMEUP, SDL_Scancode.SDL_SCANCODE_VOLUMEUP),
+            (InputKey.VolumeDown, Key.VolumeDown, SDL_Keycode.SDLK_VOLUMEDOWN, SDL_Scancode.SDL_SCANCODE_VOLUMEDOWN),
+            (InputKey.Clear, Key.Clear, SDL_Keycode.SDLK_CLEAR, SDL_Scancode.SDL_SCANCODE_CLEAR),
+            (InputKey.LControl, Key.ControlLeft, SDL_Keycode.SDLK_LCTRL, SDL_Scancode.SDL_SCANCODE_LCTRL),
+            (InputKey.LShift, Key.ShiftLeft, SDL_Keycode.SDLK_LSHIFT, SDL_Scancode.SDL_SCANCODE_LSHIFT),
+            (InputKey.LAlt, Key.AltLeft, SDL_Keycode.SDLK_LALT, SDL_Scancode.SDL_SCANCODE_LALT),
+            (InputKey.LSuper, Key.WinLeft, SDL_Keycode.SDLK_LGUI, SDL_Scancode.SDL_SCANCODE_LGUI),
+            (InputKey.RControl, Key.ControlRight, SDL_Keycode.SDLK_RCTRL, SDL_Scancode.SDL_SCANCODE_RCTRL),
+            (InputKey.RShift, Key.ShiftRight, SDL_Keycode.SDLK_RSHIFT, SDL_Scancode.SDL_SCANCODE_RSHIFT),
+            (InputKey.RAlt, Key.AltRight, SDL_Keycode.SDLK_RALT, SDL_Scancode.SDL_SCANCODE_RALT),
+            (InputKey.RSuper, Key.WinRight, SDL_Keycode.SDLK_RGUI, SDL_Scancode.SDL_SCANCODE_RGUI),
+            (InputKey.TrackNext, Key.TrackNext, SDL_Keycode.SDLK_MEDIA_NEXT_TRACK, SDL_Scancode.SDL_SCANCODE_MEDIA_NEXT_TRACK),
+            (InputKey.TrackPrevious, Key.TrackPrevious, SDL_Keycode.SDLK_MEDIA_PREVIOUS_TRACK, SDL_Scancode.SDL_SCANCODE_MEDIA_PREVIOUS_TRACK),
+            (InputKey.Stop, Key.Stop, SDL_Keycode.SDLK_MEDIA_STOP, SDL_Scancode.SDL_SCANCODE_MEDIA_STOP),
+            (InputKey.None, Key.Stop, SDL_Keycode.SDLK_STOP, SDL_Scancode.SDL_SCANCODE_STOP),
+            (InputKey.PlayPause, Key.PlayPause, SDL_Keycode.SDLK_MEDIA_PLAY_PAUSE, SDL_Scancode.SDL_SCANCODE_MEDIA_PLAY_PAUSE),
+            (InputKey.Sleep, Key.Sleep, SDL_Keycode.SDLK_SLEEP, SDL_Scancode.SDL_SCANCODE_SLEEP),
+            (InputKey.None, Key.Escape, SDL_Keycode.SDLK_AC_BACK, SDL_Scancode.SDL_SCANCODE_AC_BACK),
+            (InputKey.None, Key.Comma, SDL_Keycode.SDLK_KP_COMMA, SDL_Scancode.SDL_SCANCODE_KP_COMMA),
+            (InputKey.None, Key.Tab, SDL_Keycode.SDLK_KP_TAB, SDL_Scancode.SDL_SCANCODE_KP_TAB),
+            (InputKey.None, Key.BackSpace, SDL_Keycode.SDLK_KP_BACKSPACE, SDL_Scancode.SDL_SCANCODE_KP_BACKSPACE),
+            (InputKey.None, Key.A, SDL_Keycode.SDLK_KP_A, SDL_Scancode.SDL_SCANCODE_KP_A),
+            (InputKey.None, Key.B, SDL_Keycode.SDLK_KP_B, SDL_Scancode.SDL_SCANCODE_KP_B),
+            (InputKey.None, Key.C, SDL_Keycode.SDLK_KP_C, SDL_Scancode.SDL_SCANCODE_KP_C),
+            (InputKey.None, Key.D, SDL_Keycode.SDLK_KP_D, SDL_Scancode.SDL_SCANCODE_KP_D),
+            (InputKey.None, Key.E, SDL_Keycode.SDLK_KP_E, SDL_Scancode.SDL_SCANCODE_KP_E),
+            (InputKey.None, Key.F, SDL_Keycode.SDLK_KP_F, SDL_Scancode.SDL_SCANCODE_KP_F),
+            (InputKey.None, Key.Space, SDL_Keycode.SDLK_KP_SPACE, SDL_Scancode.SDL_SCANCODE_KP_SPACE),
+            (InputKey.None, Key.Clear, SDL_Keycode.SDLK_KP_CLEAR, SDL_Scancode.SDL_SCANCODE_KP_CLEAR),
+            (InputKey.None, Key.KeypadDecimal, SDL_Keycode.SDLK_DECIMALSEPARATOR, SDL_Scancode.SDL_SCANCODE_DECIMALSEPARATOR),
             (InputKey.F13, Key.F13, SDL_Keycode.SDLK_F13, SDL_Scancode.SDL_SCANCODE_F13),
             (InputKey.F14, Key.F14, SDL_Keycode.SDLK_F14, SDL_Scancode.SDL_SCANCODE_F14),
             (InputKey.F15, Key.F15, SDL_Keycode.SDLK_F15, SDL_Scancode.SDL_SCANCODE_F15),
@@ -153,24 +160,20 @@ namespace osu.Framework.Platform.SDL3
             (InputKey.F22, Key.F22, SDL_Keycode.SDLK_F22, SDL_Scancode.SDL_SCANCODE_F22),
             (InputKey.F23, Key.F23, SDL_Keycode.SDLK_F23, SDL_Scancode.SDL_SCANCODE_F23),
             (InputKey.F24, Key.F24, SDL_Keycode.SDLK_F24, SDL_Scancode.SDL_SCANCODE_F24),
-            (InputKey.Menu, Key.Menu, SDL_Keycode.SDLK_MENU, SDL_Scancode.SDL_SCANCODE_MENU),
-            (InputKey.None, Key.Menu, SDL_Keycode.SDLK_APPLICATION, SDL_Scancode.SDL_SCANCODE_APPLICATION),
-            (InputKey.None, Key.Stop, SDL_Keycode.SDLK_STOP, SDL_Scancode.SDL_SCANCODE_STOP),
-            (InputKey.Mute, Key.Mute, SDL_Keycode.SDLK_MUTE, SDL_Scancode.SDL_SCANCODE_MUTE),
-            (InputKey.VolumeUp, Key.VolumeUp, SDL_Keycode.SDLK_VOLUMEUP, SDL_Scancode.SDL_SCANCODE_VOLUMEUP),
-            (InputKey.VolumeDown, Key.VolumeDown, SDL_Keycode.SDLK_VOLUMEDOWN, SDL_Scancode.SDL_SCANCODE_VOLUMEDOWN),
-            (InputKey.None, Key.Clear, SDL_Keycode.SDLK_CLEAR, SDL_Scancode.SDL_SCANCODE_CLEAR),
-            (InputKey.None, Key.KeypadDecimal, SDL_Keycode.SDLK_DECIMALSEPARATOR, SDL_Scancode.SDL_SCANCODE_DECIMALSEPARATOR),
-            (InputKey.LControl, Key.ControlLeft, SDL_Keycode.SDLK_LCTRL, SDL_Scancode.SDL_SCANCODE_LCTRL),
-            (InputKey.LShift, Key.ShiftLeft, SDL_Keycode.SDLK_LSHIFT, SDL_Scancode.SDL_SCANCODE_LSHIFT),
-            (InputKey.LAlt, Key.AltLeft, SDL_Keycode.SDLK_LALT, SDL_Scancode.SDL_SCANCODE_LALT),
-            (InputKey.LSuper, Key.WinLeft, SDL_Keycode.SDLK_LGUI, SDL_Scancode.SDL_SCANCODE_LGUI),
-            (InputKey.RControl, Key.ControlRight, SDL_Keycode.SDLK_RCTRL, SDL_Scancode.SDL_SCANCODE_RCTRL),
-            (InputKey.RShift, Key.ShiftRight, SDL_Keycode.SDLK_RSHIFT, SDL_Scancode.SDL_SCANCODE_RSHIFT),
-            (InputKey.RAlt, Key.AltRight, SDL_Keycode.SDLK_RALT, SDL_Scancode.SDL_SCANCODE_RALT),
-            (InputKey.RSuper, Key.WinRight, SDL_Keycode.SDLK_RGUI, SDL_Scancode.SDL_SCANCODE_RGUI),
-            (InputKey.Sleep, Key.Sleep, SDL_Keycode.SDLK_SLEEP, SDL_Scancode.SDL_SCANCODE_SLEEP),
-        }; // add back media keys and some more keys
+
+            /* Keys that don't exist under the US keyboard layout and TK Key enum.
+               Below keys don't have scancode, because they usually utilize 'different' keys on US layout.
+               SDLKeyConverter will not work properly if there is more than one key with same scancode. */
+            (InputKey.Colon, (Key)InputKey.Colon, SDL_Keycode.SDLK_COLON, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
+            (InputKey.Exclaim, (Key)InputKey.Exclaim, SDL_Keycode.SDLK_EXCLAIM, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
+            (InputKey.Dollar, (Key)InputKey.Dollar, SDL_Keycode.SDLK_DOLLAR, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
+            (InputKey.Asterisk, (Key)InputKey.Asterisk, SDL_Keycode.SDLK_ASTERISK, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
+            (InputKey.RightParen, (Key)InputKey.RightParen, SDL_Keycode.SDLK_RIGHTPAREN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
+            (InputKey.LeftParen, (Key)InputKey.LeftParen, SDL_Keycode.SDLK_LEFTPAREN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
+            (InputKey.Caret, (Key)InputKey.Caret, SDL_Keycode.SDLK_CARET, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
+            (InputKey.Less, (Key)InputKey.Less, SDL_Keycode.SDLK_LESS, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
+            (InputKey.At, (Key)InputKey.At, SDL_Keycode.SDLK_AT, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
+        };
 
         private static readonly Dictionary<SDL_Keycode, Key> keycode_mapping = key_mapping.Where(k => k.Item3 != SDL_Keycode.SDLK_UNKNOWN)
                                                                                           .ToDictionary(k => k.Item3, v => v.Item2);
@@ -181,7 +184,58 @@ namespace osu.Framework.Platform.SDL3
         private static readonly Dictionary<InputKey, (SDL_Keycode, SDL_Scancode)> inputkey_mapping = key_mapping.Where(k => k.Item1 != InputKey.None)
                                                                                                                 .ToDictionary(k => k.Item1, v => (v.Item3, v.Item4));
 
-        public static Key ToKey(this SDL_KeyboardEvent sdlKeyboardEvent) => sdlKeyboardEvent.key.ToKey();
+        public static Key ToKey(this SDL_KeyboardEvent sdlKeyboardEvent)
+        {
+            Key key = sdlKeyboardEvent.key.ToKey();
+
+            if (key == Key.Unknown && !scancode_mapping.TryGetValue(sdlKeyboardEvent.scancode, out key))
+                return Key.Unknown;
+
+            // Apple devices don't have the notion of NumLock (they have a Clear key instead).
+            // treat them as if they always have NumLock on (the numpad always performs its primary actions).
+            bool numLockOn = sdlKeyboardEvent.mod.HasFlagFast(SDL_Keymod.SDL_KMOD_NUM) || RuntimeInfo.IsApple;
+
+            if (!numLockOn)
+            {
+                switch (key)
+                {
+                    case Key.Keypad1:
+                        return Key.End;
+
+                    case Key.Keypad2:
+                        return Key.Down;
+
+                    case Key.Keypad3:
+                        return Key.PageDown;
+
+                    case Key.Keypad4:
+                        return Key.Left;
+
+                    case Key.Keypad5:
+                        return Key.Clear;
+
+                    case Key.Keypad6:
+                        return Key.Right;
+
+                    case Key.Keypad7:
+                        return Key.Home;
+
+                    case Key.Keypad8:
+                        return Key.Up;
+
+                    case Key.Keypad9:
+                        return Key.PageUp;
+
+                    case Key.Keypad0:
+                        return Key.PageUp;
+
+                    case Key.KeypadPeriod:
+                        return Key.Delete;
+                }
+            }
+
+            return key;
+        }
 
         public static Key ToKey(this SDL_Keycode sdlKeycode)
         {

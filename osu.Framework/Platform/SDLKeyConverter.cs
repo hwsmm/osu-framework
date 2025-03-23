@@ -25,10 +25,10 @@ namespace osu.Framework.Platform
             {
                 SDL_Scancode scancode = key.ToScancode();
                 SDL_Keycode keycode = SDL.SDL3.SDL_GetKeyFromScancode(scancode, SDL_Keymod.SDL_KMOD_NONE, true);
-                InputKey res = KeyCombination.FromKey(keycode.ToKey());
-                if (key != res)
-                    Logging.Logger.Log($"before {key}, scancode {scancode}, keycode {keycode}, after {res}");
-                return res == InputKey.None ? key : res;
+                InputKey convertedKey = KeyCombination.FromKey(keycode.ToKey());
+
+                // InputKey.None is usually when `key` is Ctrl/Shift, where we don't know whether it is left or right, or mouse.
+                return convertedKey == InputKey.None ? key : convertedKey;
             }
             else if (!FrameworkEnvironment.UseSDL3 && global::SDL2.SDL.SDL_WasInit(global::SDL2.SDL.SDL_INIT_VIDEO) != 0)
             {
@@ -36,7 +36,7 @@ namespace osu.Framework.Platform
                 return key;
             }
 
-            Logger.Log("SDL needs to be initialized first", level: LogLevel.Error);
+            Logger.Log("SDL needs to be initialized first before converting keycode");
             return key;
         }
 
@@ -45,7 +45,7 @@ namespace osu.Framework.Platform
         /// Returns a converted <paramref name="keyBindings"/> with <see cref="GetPositionalKeyInKeymap"/>.
         /// </summary>
         /// <param name="keyBindings">An enumerable to convert</param>
-        /// <returns>Converted enumerable of <paramref cref="keyBindings"/>.</returns>
+        /// <returns>Converted enumerable</returns>
         public static IEnumerable<KeyBinding> GetPositionalKeyBindings(IEnumerable<KeyBinding> keyBindings)
         {
             foreach (var bind in keyBindings)
