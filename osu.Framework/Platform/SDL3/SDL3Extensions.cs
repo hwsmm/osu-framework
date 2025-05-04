@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Immutable;
 using System.Drawing;
 using System.Linq;
@@ -8,7 +9,6 @@ using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
-using osu.Framework.Logging;
 using osuTK.Input;
 using SDL;
 using static SDL.SDL3;
@@ -269,43 +269,57 @@ namespace osu.Framework.Platform.SDL3
             return SDL_Keycode.SDLK_UNKNOWN;
         }
 
-        private static volatile bool sdlInitWarning;
+        private static ImmutableDictionary<InputKey, InputKey>? positionalMapping;
 
         /// <summary>
-        /// This function finds where the <paramref name="key"/> is actually located on a keyboard,
-        /// and returns the corresponding key that is used in current system keyboard layout.
+        /// Generates our own positional mapping on SDL init, because SDL_GetKeyFromScancode is not thread-safe.
+        /// Converts all available InputKey and store to a thread-safe ImmutableDictionary.
         /// </summary>
-        /// <param name="key">A key to convert</param>
-        /// <returns>Converted key with current keyboard layout</returns>
-        public static InputKey GetPositionalKey(this InputKey key)
+        public static void UpdateKeymap()
         {
-            if (FrameworkEnvironment.UseSDL3 && SDL.SDL3.SDL_WasInit(SDL_InitFlags.SDL_INIT_VIDEO) != 0)
+            if (positionalMapping != null)
+                return;
+
+            ImmutableDictionary<InputKey, InputKey>.Builder builder = ImmutableDictionary.CreateBuilder<InputKey, InputKey>();
+
+            foreach (InputKey key in Enum.GetValues(typeof(InputKey)))
             {
                 // Get a plain scancode that corresponds to US layout (Key Q -> Scancode Q)
                 SDL_Scancode scancode = key.ToScancode();
 
-                // Convert the scancode to a key that corresponds to current keymap (Scancode Q -> Key A if AZERTY)
-                SDL_Keycode keycode = SDL.SDL3.SDL_GetKeyFromScancode(scancode, SDL_Keymod.SDL_KMOD_NONE, true);
+                if (scancode == SDL_Scancode.SDL_SCANCODE_UNKNOWN)
+                    continue;
 
-                // Finally, convert the positional SDL_Keycode to an InputKey.
+                // Convert the scancode to a key that corresponds to current keymap (Scancode Q -> Key A if AZERTY)
+                SDL_Keycode keycode = SDL_GetKeyFromScancode(scancode, SDL_Keymod.SDL_KMOD_NONE, true);
+
+                if (keycode == SDL_Keycode.SDLK_UNKNOWN)
+                    continue;
+
+                // Finally, convert the converted SDL_Keycode to an InputKey.
                 InputKey convertedKey = KeyCombination.FromKey(keycode.ToKey());
 
-                // InputKey.None is usually when `key` is Ctrl/Shift, where we don't know whether it is left or right, or mouse.
-                return convertedKey == InputKey.None ? key : convertedKey;
-            }
-            else if (!FrameworkEnvironment.UseSDL3 && global::SDL2.SDL.SDL_WasInit(global::SDL2.SDL.SDL_INIT_VIDEO) != 0)
-            {
-                // SDL2 conversion table is not available yet.
-                return key;
+                if (convertedKey != InputKey.None && key != convertedKey)
+                    builder.Add(key, convertedKey);
             }
 
-            if (!sdlInitWarning)
-            {
-                sdlInitWarning = true;
-                Logger.Log("SDL needs to be initialized first before converting keycode");
-            }
+            positionalMapping = builder.ToImmutable();
+        }
 
-            return key;
+        /// <summary>
+        /// This function finds where <paramref name="inputKey"/> is actually located on a keyboard,
+        /// and returns the corresponding key that is used in current system keyboard layout.
+        /// Basically, this lets you treat <paramref name="inputKey"/> as a scancode.
+        /// <see cref="SDL3Window"/> must be created before you call this function.
+        /// </summary>
+        /// <param name="inputKey">A key to convert</param>
+        /// <returns>Converted key with current keyboard layout</returns>
+        public static InputKey ToPositionalKey(this InputKey inputKey)
+        {
+            if (positionalMapping?.TryGetValue(inputKey, out var mapping) == true)
+                return mapping;
+
+            return inputKey;
         }
 
         public static WindowState ToWindowState(this SDL_WindowFlags windowFlags, bool isFullscreenBorderless)
