@@ -1,13 +1,14 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Drawing;
 using System.Linq;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
+using osu.Framework.Logging;
 using osuTK.Input;
 using SDL;
 using static SDL.SDL3;
@@ -16,8 +17,7 @@ namespace osu.Framework.Platform.SDL3
 {
     public static class SDL3Extensions
     {
-        private static readonly HashSet<(InputKey, Key, SDL_Keycode, SDL_Scancode)> key_mapping = new HashSet<(InputKey, Key, SDL_Keycode, SDL_Scancode)>
-        {
+        private static readonly ImmutableHashSet<(InputKey, Key, SDL_Keycode, SDL_Scancode)> key_mapping = ImmutableHashSet.Create(
             (InputKey.Enter, Key.Enter, SDL_Keycode.SDLK_RETURN, SDL_Scancode.SDL_SCANCODE_RETURN),
             (InputKey.Escape, Key.Escape, SDL_Keycode.SDLK_ESCAPE, SDL_Scancode.SDL_SCANCODE_ESCAPE),
             (InputKey.BackSpace, Key.BackSpace, SDL_Keycode.SDLK_BACKSPACE, SDL_Scancode.SDL_SCANCODE_BACKSPACE),
@@ -161,9 +161,9 @@ namespace osu.Framework.Platform.SDL3
             (InputKey.F23, Key.F23, SDL_Keycode.SDLK_F23, SDL_Scancode.SDL_SCANCODE_F23),
             (InputKey.F24, Key.F24, SDL_Keycode.SDLK_F24, SDL_Scancode.SDL_SCANCODE_F24),
 
-            /* Keys that don't exist under the US keyboard layout and TK Key enum.
-               Below keys don't have scancode, because they usually utilize 'different' keys on US layout.
-               SDLKeyConverter will not work properly if there is more than one key with same scancode. */
+            /* Here are keys that don't exist under the US keyboard layout and TK Key enum.
+               They don't have scancode, because they usually utilize 'different' keys on US layout.
+               Dictionaries below won't work if there is more than one key with same scancode. */
             (InputKey.Colon, (Key)InputKey.Colon, SDL_Keycode.SDLK_COLON, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
             (InputKey.Exclaim, (Key)InputKey.Exclaim, SDL_Keycode.SDLK_EXCLAIM, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
             (InputKey.Dollar, (Key)InputKey.Dollar, SDL_Keycode.SDLK_DOLLAR, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
@@ -172,17 +172,16 @@ namespace osu.Framework.Platform.SDL3
             (InputKey.LeftParen, (Key)InputKey.LeftParen, SDL_Keycode.SDLK_LEFTPAREN, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
             (InputKey.Caret, (Key)InputKey.Caret, SDL_Keycode.SDLK_CARET, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
             (InputKey.Less, (Key)InputKey.Less, SDL_Keycode.SDLK_LESS, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-            (InputKey.At, (Key)InputKey.At, SDL_Keycode.SDLK_AT, SDL_Scancode.SDL_SCANCODE_UNKNOWN),
-        };
+            (InputKey.At, (Key)InputKey.At, SDL_Keycode.SDLK_AT, SDL_Scancode.SDL_SCANCODE_UNKNOWN));
 
-        private static readonly Dictionary<SDL_Keycode, Key> keycode_mapping = key_mapping.Where(k => k.Item3 != SDL_Keycode.SDLK_UNKNOWN)
-                                                                                          .ToDictionary(k => k.Item3, v => v.Item2);
+        private static readonly ImmutableDictionary<SDL_Keycode, Key> keycode_mapping = key_mapping.Where(k => k.Item3 != SDL_Keycode.SDLK_UNKNOWN)
+                                                                                                   .ToImmutableDictionary(k => k.Item3, v => v.Item2);
 
-        private static readonly Dictionary<SDL_Scancode, Key> scancode_mapping = key_mapping.Where(k => k.Item4 != SDL_Scancode.SDL_SCANCODE_UNKNOWN)
-                                                                                            .ToDictionary(k => k.Item4, v => v.Item2);
+        private static readonly ImmutableDictionary<SDL_Scancode, Key> scancode_mapping = key_mapping.Where(k => k.Item4 != SDL_Scancode.SDL_SCANCODE_UNKNOWN)
+                                                                                                     .ToImmutableDictionary(k => k.Item4, v => v.Item2);
 
-        private static readonly Dictionary<InputKey, (SDL_Keycode, SDL_Scancode)> inputkey_mapping = key_mapping.Where(k => k.Item1 != InputKey.None)
-                                                                                                                .ToDictionary(k => k.Item1, v => (v.Item3, v.Item4));
+        private static readonly ImmutableDictionary<InputKey, (SDL_Keycode, SDL_Scancode)> inputkey_mapping = key_mapping.Where(k => k.Item1 != InputKey.None)
+                                                                                                                         .ToImmutableDictionary(k => k.Item1, v => (v.Item3, v.Item4));
 
         public static Key ToKey(this SDL_KeyboardEvent sdlKeyboardEvent)
         {
@@ -269,6 +268,38 @@ namespace osu.Framework.Platform.SDL3
                 return key.Item1;
 
             return SDL_Keycode.SDLK_UNKNOWN;
+        }
+
+        /// <summary>
+        /// This function finds where the <paramref name="key"/> is actually located on a keyboard,
+        /// and returns the corresponding key that is used in current system keyboard layout.
+        /// </summary>
+        /// <param name="key">A key to convert</param>
+        /// <returns>Converted key with current keyboard layout</returns>
+        public static InputKey GetPositionalKey(this InputKey key)
+        {
+            if (FrameworkEnvironment.UseSDL3 && SDL.SDL3.SDL_WasInit(SDL_InitFlags.SDL_INIT_VIDEO) != 0)
+            {
+                // Get a plain scancode that corresponds to US layout (Key Q -> Scancode Q)
+                SDL_Scancode scancode = key.ToScancode();
+
+                // Convert the scancode to a key that corresponds to current keymap (Scancode Q -> Key A if AZERTY)
+                SDL_Keycode keycode = SDL.SDL3.SDL_GetKeyFromScancode(scancode, SDL_Keymod.SDL_KMOD_NONE, true);
+
+                // Finally, convert the positional SDL_Keycode to an InputKey.
+                InputKey convertedKey = KeyCombination.FromKey(keycode.ToKey());
+
+                // InputKey.None is usually when `key` is Ctrl/Shift, where we don't know whether it is left or right, or mouse.
+                return convertedKey == InputKey.None ? key : convertedKey;
+            }
+            else if (!FrameworkEnvironment.UseSDL3 && global::SDL2.SDL.SDL_WasInit(global::SDL2.SDL.SDL_INIT_VIDEO) != 0)
+            {
+                // SDL2 conversion table is not available yet.
+                return key;
+            }
+
+            Logger.Log("SDL needs to be initialized first before converting keycode");
+            return key;
         }
 
         public static WindowState ToWindowState(this SDL_WindowFlags windowFlags, bool isFullscreenBorderless)
