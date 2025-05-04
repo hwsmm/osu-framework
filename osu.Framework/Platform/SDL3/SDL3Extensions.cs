@@ -160,7 +160,6 @@ namespace osu.Framework.Platform.SDL3
             (InputKey.F22, Key.F22, SDL_Keycode.SDLK_F22, SDL_Scancode.SDL_SCANCODE_F22),
             (InputKey.F23, Key.F23, SDL_Keycode.SDLK_F23, SDL_Scancode.SDL_SCANCODE_F23),
             (InputKey.F24, Key.F24, SDL_Keycode.SDLK_F24, SDL_Scancode.SDL_SCANCODE_F24),
-
             /* Here are keys that don't exist under the US keyboard layout and TK Key enum.
                They don't have scancode, because they usually utilize 'different' keys on US layout.
                Dictionaries below won't work if there is more than one key with same scancode. */
@@ -270,6 +269,8 @@ namespace osu.Framework.Platform.SDL3
             return SDL_Keycode.SDLK_UNKNOWN;
         }
 
+        private static volatile bool sdlInitWarning;
+
         /// <summary>
         /// This function finds where the <paramref name="key"/> is actually located on a keyboard,
         /// and returns the corresponding key that is used in current system keyboard layout.
@@ -298,7 +299,12 @@ namespace osu.Framework.Platform.SDL3
                 return key;
             }
 
-            Logger.Log("SDL needs to be initialized first before converting keycode");
+            if (!sdlInitWarning)
+            {
+                sdlInitWarning = true;
+                Logger.Log("SDL needs to be initialized first before converting keycode");
+            }
+
             return key;
         }
 

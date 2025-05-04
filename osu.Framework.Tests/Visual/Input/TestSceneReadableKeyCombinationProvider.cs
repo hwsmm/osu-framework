@@ -10,7 +10,7 @@ using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Input.States;
-using osu.Framework.Platform;
+using osu.Framework.Platform.SDL3;
 using osuTK;
 using osuTK.Graphics;
 
@@ -111,7 +111,7 @@ namespace osu.Framework.Tests.Visual.Input
 
             public Key(InputKey key)
             {
-                keyCombination = new KeyCombination(SDLKeyConverter.GetPositionalKeyInKeymap(key));
+                keyCombination = new KeyCombination(key.GetPositionalKey());
 
                 Padding = new MarginPadding(3);
                 InternalChildren = new Drawable[]
