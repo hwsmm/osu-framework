@@ -5,6 +5,7 @@ using System;
 using System.Collections.Immutable;
 using System.Drawing;
 using System.Linq;
+using osu.Framework.Development;
 using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Input;
@@ -280,6 +281,9 @@ namespace osu.Framework.Platform.SDL3
             if (positionalMapping != null)
                 return;
 
+            if (SDL_WasInit(SDL_InitFlags.SDL_INIT_VIDEO) != SDL_InitFlags.SDL_INIT_VIDEO)
+                throw new InvalidOperationException("Initialize SDL before calling this function.");
+
             ImmutableDictionary<InputKey, InputKey>.Builder builder = ImmutableDictionary.CreateBuilder<InputKey, InputKey>();
 
             foreach (InputKey key in Enum.GetValues(typeof(InputKey)))
@@ -310,12 +314,15 @@ namespace osu.Framework.Platform.SDL3
         /// This function finds where <paramref name="inputKey"/> is actually located on a keyboard,
         /// and returns the corresponding key that is used in current system keyboard layout.
         /// Basically, this lets you treat <paramref name="inputKey"/> as a scancode.
-        /// <see cref="SDL3Window"/> must be created before you call this function.
+        /// <see cref="UpdateKeymap"/> must be called before you call this function.
         /// </summary>
         /// <param name="inputKey">A key to convert</param>
         /// <returns>Converted key with current keyboard layout</returns>
         public static InputKey ToPositionalKey(this InputKey inputKey)
         {
+            if (positionalMapping == null && !DebugUtils.IsNUnitRunning)
+                throw new InvalidOperationException($"{nameof(ToPositionalKey)} must be used after {nameof(UpdateKeymap)} unless in headless mode.");
+
             if (positionalMapping?.TryGetValue(inputKey, out var mapping) == true)
                 return mapping;
 
