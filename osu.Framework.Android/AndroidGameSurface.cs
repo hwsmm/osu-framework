@@ -20,6 +20,8 @@ namespace osu.Framework.Android
 
         public BindableSafeArea SafeAreaPadding { get; } = new BindableSafeArea();
 
+        public IntPtr SurfaceHandle => NativeSurface?.Handle ?? IntPtr.Zero;
+
         public AndroidGameSurface(AndroidGameActivity activity, Context? context)
             : base(context)
         {
@@ -46,13 +48,13 @@ namespace osu.Framework.Android
 
         public bool IsSurfaceReady => isSurfaceReady;
 
-        public override void HandlePause()
+        protected override void HandlePause()
         {
             base.HandlePause();
             isSurfaceReady = false;
         }
 
-        public override void HandleResume()
+        protected override void HandleResume()
         {
             base.HandleResume();
             isSurfaceReady = true;
