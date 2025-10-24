@@ -12,6 +12,7 @@ using ManagedBass.Wasapi;
 using osu.Framework.Audio;
 using osu.Framework.Bindables;
 using osu.Framework.Development;
+using osu.Framework.Logging;
 using osu.Framework.Platform.Linux.Native;
 
 namespace osu.Framework.Threading
@@ -140,9 +141,10 @@ namespace osu.Framework.Threading
             if (!Bass.Init(deviceId, Flags: (DeviceInitFlags)128)) // 128 == BASS_DEVICE_REINIT
                 return false;
 
-            // Need to do more testing. Users reporting buffer underruns even with a large (20ms) buffer.
-            // Also playback latency improvements are not present across all users.
-            // attemptWasapiInitialisation();
+            // That this has not been mass-tested since https://github.com/ppy/osu-framework/pull/6651 and probably needs to be.
+            // Currently envvar gated for users to test at their own discretion.
+            if (FrameworkEnvironment.UseWasapi)
+                attemptWasapiInitialisation();
 
             initialised_devices.Add(deviceId);
             return true;
@@ -186,6 +188,8 @@ namespace osu.Framework.Threading
         {
             if (RuntimeInfo.OS != RuntimeInfo.Platform.Windows)
                 return;
+
+            Logger.Log("Attempting local BassWasapi initialisation");
 
             int wasapiDevice = -1;
 
@@ -240,7 +244,8 @@ namespace osu.Framework.Threading
                 }
             });
 
-            bool initialised = BassWasapi.Init(wasapiDevice, Procedure: wasapiProcedure, Buffer: 0.02f, Period: 0.01f);
+            bool initialised = BassWasapi.Init(wasapiDevice, Procedure: wasapiProcedure, Flags: WasapiInitFlags.EventDriven | WasapiInitFlags.AutoFormat, Buffer: 0f, Period: float.Epsilon);
+            Logger.Log($"Initialising BassWasapi for device {wasapiDevice}...{(initialised ? "success!" : "FAILED")}");
 
             if (!initialised)
                 return;
