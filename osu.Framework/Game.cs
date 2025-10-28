@@ -191,11 +191,11 @@ namespace osu.Framework
             switch (config.Get<AudioDriver>(FrameworkSetting.AudioDriver))
             {
                 case AudioDriver.SDL3:
-                    Audio = new SDL3AudioManager(Host.AudioThread, tracks, samples) { EventScheduler = Scheduler };
+                    Audio = new SDL3AudioManager(Host.AudioThread, tracks, samples, config) { EventScheduler = Scheduler };
                     break;
 
                 default:
-                    Audio = new BassAudioManager(Host.AudioThread, tracks, samples) { EventScheduler = Scheduler };
+                    Audio = new BassAudioManager(Host.AudioThread, tracks, samples, config) { EventScheduler = Scheduler };
                     break;
             }
 
@@ -203,12 +203,6 @@ namespace osu.Framework
 
             dependencies.CacheAs(Audio.Tracks);
             dependencies.CacheAs(Audio.Samples);
-
-            // attach our bindables to the audio subsystem.
-            config.BindWith(FrameworkSetting.AudioDevice, Audio.AudioDevice);
-            config.BindWith(FrameworkSetting.VolumeUniversal, Audio.Volume);
-            config.BindWith(FrameworkSetting.VolumeEffect, Audio.VolumeSample);
-            config.BindWith(FrameworkSetting.VolumeMusic, Audio.VolumeTrack);
 
             Shaders = new ShaderManager(Host.Renderer, new NamespacedResourceStore<byte[]>(Resources, @"Shaders"));
             dependencies.Cache(Shaders);

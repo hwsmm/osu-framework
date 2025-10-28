@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using JetBrains.Annotations;
 using ManagedBass;
 using ManagedBass.Fx;
 using ManagedBass.Mix;
@@ -17,6 +18,7 @@ using osu.Framework.Audio.Mixing.Bass;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Audio.Track;
 using osu.Framework.Bindables;
+using osu.Framework.Configuration;
 using osu.Framework.Development;
 using osu.Framework.Extensions;
 using osu.Framework.Extensions.TypeExtensions;
@@ -73,21 +75,18 @@ namespace osu.Framework.Audio
         /// <param name="audioThread">The host's audio thread.</param>
         /// <param name="trackStore">The resource store containing all audio tracks to be used in the future.</param>
         /// <param name="sampleStore">The sample store containing all audio samples to be used in the future.</param>
-        public BassAudioManager(AudioThread audioThread, ResourceStore<byte[]> trackStore, ResourceStore<byte[]> sampleStore)
-            : base(audioThread, trackStore, sampleStore)
+        /// <param name="config"></param>
+        public BassAudioManager(AudioThread audioThread, ResourceStore<byte[]> trackStore, ResourceStore<byte[]> sampleStore, [CanBeNull] FrameworkConfigManager config)
+            : base(audioThread, trackStore, sampleStore, config)
         {
-            GlobalMixerHandle.ValueChanged += handle =>
-            {
-                OnDeviceChanged();
-                UsingGlobalMixer.Value = handle.NewValue.HasValue;
-            };
-
-            CancellationToken token = CancelSource.Token;
+            GlobalMixerHandle.ValueChanged += handle => ((Bindable<bool>)UsingGlobalMixer).Value = handle.NewValue.HasValue;
 
             syncAudioDevices();
+
+            // check for changes in any audio devices every 1000ms (slightly expensive operation)
+            CancellationToken token = CancelSource.Token;
             AudioScheduler.AddDelayed(() =>
             {
-                // sync audioDevices every 1000ms
                 new Thread(() =>
                 {
                     while (!token.IsCancellationRequested)
@@ -107,18 +106,6 @@ namespace osu.Framework.Audio
                     IsBackground = true
                 }.Start();
             }, 1000);
-        }
-
-        protected void OnDevicesChanged()
-        {
-            AudioScheduler.Add(() =>
-            {
-                if (CancelSource.IsCancellationRequested)
-                    return;
-
-                if (!IsCurrentDeviceValid())
-                    SetAudioDevice();
-            });
         }
 
         internal override Track.Track GetNewTrack(Stream data, string name) => new TrackBass(data, name);
@@ -141,81 +128,58 @@ namespace osu.Framework.Audio
         }
 
         /// <summary>
-        /// Sets the output audio device by its name.
+        /// (Re-)Initialises BASS for the current <see cref="FrameworkSetting.AudioDevice"/>.
         /// This will automatically fall back to the system default device on failure.
         /// </summary>
-        /// <param name="deviceName">Name of the audio device, or null to use the configured device preference.</param>
-        protected override bool SetAudioDevice(string deviceName = null)
+        protected override void InitCurrentDevice()
         {
-            deviceName ??= AudioDevice.Value;
+            string deviceName = AudioDevice.Value;
 
             // try using the specified device
             int deviceIndex = DeviceNames.FindIndex(d => d == deviceName);
-            if (deviceIndex >= 0 && SetAudioDevice(BASS_INTERNAL_DEVICE_COUNT + deviceIndex))
-                return true;
+            if (deviceIndex >= 0 && trySetDevice(BASS_INTERNAL_DEVICE_COUNT + deviceIndex)) return;
 
             // try using the system default if there is any device present.
             // mobiles are an exception as the built-in speakers may not be provided as an audio device name,
             // but they are still provided by BASS under the internal device name "Default".
-            if ((DeviceNames.Count > 0 || RuntimeInfo.IsMobile) && SetAudioDevice(bass_default_device))
-                return true;
+            if ((DeviceNames.Count > 0 || RuntimeInfo.IsMobile) && trySetDevice(bass_default_device)) return;
 
             // no audio devices can be used, so try using Bass-provided "No sound" device as last resort.
-            if (SetAudioDevice(Bass.NoSoundDevice))
-                return true;
+            trySetDevice(Bass.NoSoundDevice);
 
             // we're boned. even "No sound" device won't initialise.
-            return false;
-        }
+            return;
 
-        protected override bool SetAudioDevice(int deviceIndex)
-        {
-            var device = audioDevices.ElementAtOrDefault(deviceIndex);
-
-            // device is invalid
-            if (!device.IsEnabled)
-                return false;
-
-            // we don't want bass initializing with real audio device on headless test runs.
-            if (deviceIndex != Bass.NoSoundDevice && DebugUtils.IsNUnitRunning)
-                return false;
-
-            // initialize new device
-            bool initSuccess = InitBass(deviceIndex);
-            if (Bass.LastError != Errors.Already && BassUtils.CheckFaulted(false))
-                return false;
-
-            if (!initSuccess)
+            bool trySetDevice(int deviceId)
             {
-                Logger.Log("BASS failed to initialize but did not provide an error code", level: LogLevel.Error);
-                return false;
+                var device = audioDevices.ElementAtOrDefault(deviceId);
+
+                // device is invalid
+                if (!device.IsEnabled)
+                    return false;
+
+                // we don't want bass initializing with real audio device on headless test runs.
+                if (deviceId != Bass.NoSoundDevice && DebugUtils.IsNUnitRunning)
+                    return false;
+
+                // initialize new device
+                if (!InitBass(deviceId))
+                    return false;
+
+                //we have successfully initialised a new device.
+                UpdateDevice(deviceId);
+
+                return true;
             }
-
-            Logger.Log($@"🔈 BASS initialised
-                          BASS version:           {Bass.Version}
-                          BASS FX version:        {BassFx.Version}
-                          BASS MIX version:       {BassMix.Version}
-                          Device:                 {device.Name}
-                          Driver:                 {device.Driver}
-                          Update period:          {Bass.UpdatePeriod} ms
-                          Device buffer length:   {Bass.DeviceBufferLength} ms
-                          Playback buffer length: {Bass.PlaybackBufferLength} ms");
-
-            //we have successfully initialised a new device.
-            UpdateDevice(deviceIndex);
-
-            return true;
         }
 
         /// <summary>
         /// This method calls <see cref="Bass.Init(int, int, DeviceInitFlags, IntPtr, IntPtr)"/>.
         /// It can be overridden for unit testing.
         /// </summary>
+        /// <param name="device">The device to initialise.</param>
         protected virtual bool InitBass(int device)
         {
-            if (Bass.CurrentDevice == device)
-                return true;
-
             // this likely doesn't help us but also doesn't seem to cause any issues or any cpu increase.
             Bass.UpdatePeriod = 5;
 
@@ -245,10 +209,47 @@ namespace osu.Framework.Audio
             // See https://www.un4seen.com/forum/?topic=19601 for more information.
             Bass.Configure((ManagedBass.Configuration)70, false);
 
-            if (!CurrentAudioThread.InitDevice(device))
-                return false;
+            bool success = attemptInit();
 
-            return true;
+            if (success || !UseExperimentalWasapi.Value)
+                return success;
+
+            // in the case we're using experimental WASAPI, give a second chance of initialisation by forcefully disabling it.
+            Logger.Log($"BASS device {device} failed to initialise with experimental WASAPI, disabling", level: LogLevel.Error);
+            UseExperimentalWasapi.Value = false;
+            return attemptInit();
+
+            bool attemptInit()
+            {
+                bool innerSuccess = CurrentAudioThread.InitDevice(device, UseExperimentalWasapi.Value);
+                bool alreadyInitialised = Bass.LastError == Errors.Already;
+
+                if (alreadyInitialised)
+                    return true;
+
+                if (BassUtils.CheckFaulted(false))
+                    return false;
+
+                if (!innerSuccess)
+                {
+                    Logger.Log("BASS failed to initialize but did not provide an error code", level: LogLevel.Error);
+                    return false;
+                }
+
+                var deviceInfo = audioDevices.ElementAtOrDefault(device);
+
+                Logger.Log($@"🔈 BASS initialised
+                          BASS version:           {Bass.Version}
+                          BASS FX version:        {BassFx.Version}
+                          BASS MIX version:       {BassMix.Version}
+                          Device:                 {deviceInfo.Name}
+                          Driver:                 {deviceInfo.Driver}
+                          Update period:          {Bass.UpdatePeriod} ms
+                          Device buffer length:   {Bass.DeviceBufferLength} ms
+                          Playback buffer length: {Bass.PlaybackBufferLength} ms");
+
+                return true;
+            }
         }
 
         private void syncAudioDevices()
@@ -261,7 +262,14 @@ namespace osu.Framework.Audio
             var oldDeviceNames = DeviceNames;
             var newDeviceNames = DeviceNames = audioDevices.Skip(BASS_INTERNAL_DEVICE_COUNT).Where(d => d.IsEnabled).Select(d => d.Name).ToImmutableList();
 
-            OnDevicesChanged();
+            AudioScheduler.Add(() =>
+            {
+                if (CancelSource.IsCancellationRequested)
+                    return;
+
+                if (!IsCurrentDeviceValid())
+                    InitCurrentDevice();
+            }, false);
 
             var newDevices = newDeviceNames.Except(oldDeviceNames).ToList();
             var lostDevices = oldDeviceNames.Except(newDeviceNames).ToList();

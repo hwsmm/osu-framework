@@ -5,15 +5,16 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using JetBrains.Annotations;
 using mysoundlib_cs;
 using osu.Framework.Audio.Mixing;
 using osu.Framework.Audio.Mixing.SDL3;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Audio.Track;
+using osu.Framework.Configuration;
 using osu.Framework.Extensions;
 using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.IO.Stores;
@@ -139,14 +140,16 @@ namespace osu.Framework.Audio
         /// <param name="audioThread">The host's audio thread.</param>
         /// <param name="trackStore">The resource store containing all audio tracks to be used in the future.</param>
         /// <param name="sampleStore">The sample store containing all audio samples to be used in the future.</param>
-        public SDL3AudioManager(AudioThread audioThread, ResourceStore<byte[]> trackStore, ResourceStore<byte[]> sampleStore)
-            : base(audioThread, trackStore, sampleStore)
+        /// <param name="config"></param>
+        public SDL3AudioManager(AudioThread audioThread, ResourceStore<byte[]> trackStore, ResourceStore<byte[]> sampleStore, [CanBeNull] FrameworkConfigManager config)
+            : base(audioThread, trackStore, sampleStore, config)
         {
             // handle gets initialized through Prepare in base(). Make sure that it is created.
             if (handle == IntPtr.Zero)
                 throw new InvalidOperationException("Failed to create an audio manager");
 
             syncAudioDevices();
+            AudioScheduler.AddOnce(InitCurrentDevice);
         }
 
         protected override void Prepare()
@@ -223,29 +226,49 @@ namespace osu.Framework.Audio
 
         private bool inited;
 
-        protected override unsafe bool SetAudioDevice(string? deviceName = null)
+        private bool manualHint;
+
+        protected override void InitCurrentDevice()
         {
+            string deviceName = AudioDevice.Value;
+
             byte[]? name = deviceName == null ? null : Encoding.UTF8.GetBytes(deviceName + '\0');
 
-            fixed (byte* ptr = name)
+            if (RuntimeInfo.OS == RuntimeInfo.Platform.Windows)
             {
-                if (!MySoundLibrary.mslOpenAudioDevice(handle, ptr).ToBool())
+                // Only manually set a value if the user has not set the hint
+                if (manualHint || SDL3.SDL_GetHint(SDL3.SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES) == null)
                 {
-                    // It automatically falls back to the default device if provided one is not available.
-                    // So there is no need to try again. It's doomed if it failed.
-                    Logger.Log("Audio device cannot be used! Check your audio system.", level: LogLevel.Error);
-                    return false;
+                    manualHint = true;
+
+                    if (UseExperimentalWasapi.Value)
+                    {
+                        SDL3.SDL_SetHint(SDL3.SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "1"u8);
+                        Logger.Log("Trying low latency WASAPI");
+                    }
+                    else
+                    {
+                        SDL3.SDL_ResetHint(SDL3.SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES);
+                    }
+                }
+            }
+
+            unsafe
+            {
+                fixed (byte* ptr = name)
+                {
+                    if (!MySoundLibrary.mslOpenAudioDevice(handle, ptr).ToBool())
+                    {
+                        // It automatically falls back to the default device if provided one is not available.
+                        // So there is no need to try again. It's doomed if it failed.
+                        Logger.Log("Audio device cannot be used! Check your audio system.", level: LogLevel.Error);
+                        return;
+                    }
                 }
             }
 
             inited = true;
             currentDeviceName = "loaded";
-            return true;
-        }
-
-        protected override bool SetAudioDevice(int deviceIndex)
-        {
-            return SetAudioDevice(DeviceNames.ElementAtOrDefault(deviceIndex) ?? null);
         }
 
         protected override bool IsCurrentDeviceValid() => inited;

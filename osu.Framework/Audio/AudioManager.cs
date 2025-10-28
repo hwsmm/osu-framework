@@ -8,10 +8,12 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Threading;
+using JetBrains.Annotations;
 using osu.Framework.Audio.Mixing;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Audio.Track;
 using osu.Framework.Bindables;
+using osu.Framework.Configuration;
 using osu.Framework.IO.Stores;
 using osu.Framework.Threading;
 
@@ -81,6 +83,13 @@ namespace osu.Framework.Audio
         public readonly Bindable<string> AudioDevice = new Bindable<string>();
 
         /// <summary>
+        /// Whether to use experimental WASAPI initialisation on windows.
+        /// This generally results in lower audio latency, but also changes the audio synchronisation from
+        /// historical expectations, meaning users / application will have to account for different offsets.
+        /// </summary>
+        public readonly BindableBool UseExperimentalWasapi = new BindableBool();
+
+        /// <summary>
         /// Volume of all samples played game-wide.
         /// </summary>
         public readonly BindableDouble VolumeSample = new BindableDouble(1)
@@ -101,9 +110,10 @@ namespace osu.Framework.Audio
         /// <summary>
         /// Whether a global mixer is being used for audio routing.
         /// For now, this is only the case on Windows when using shared mode WASAPI initialisation.
-        /// Need to be moved from here as it's a BASS only thing but cannot happen due to possible code change from osu! (osu#26154)
         /// </summary>
-        public readonly Bindable<bool> UsingGlobalMixer = new BindableBool();
+        public IBindable<bool> UsingGlobalMixer => usingGlobalMixer;
+
+        private readonly Bindable<bool> usingGlobalMixer = new BindableBool();
 
         // Mutated by multiple threads, must be thread safe.
         protected ImmutableList<string> DeviceNames = ImmutableList<string>.Empty;
@@ -129,7 +139,8 @@ namespace osu.Framework.Audio
         /// <param name="audioThread">The host's audio thread.</param>
         /// <param name="trackStore">The resource store containing all audio tracks to be used in the future.</param>
         /// <param name="sampleStore">The sample store containing all audio samples to be used in the future.</param>
-        protected AudioManager(AudioThread audioThread, ResourceStore<byte[]> trackStore, ResourceStore<byte[]> sampleStore)
+        /// <param name="config"></param>
+        protected AudioManager(AudioThread audioThread, ResourceStore<byte[]> trackStore, ResourceStore<byte[]> sampleStore, [CanBeNull] FrameworkConfigManager config)
         {
             Prepare();
 
@@ -137,7 +148,19 @@ namespace osu.Framework.Audio
 
             CurrentAudioThread.RegisterManager(this);
 
-            AudioDevice.ValueChanged += _ => OnDeviceChanged();
+            if (config != null)
+            {
+                // attach config bindables
+                config.BindWith(FrameworkSetting.AudioDevice, AudioDevice);
+                config.BindWith(FrameworkSetting.AudioUseExperimentalWasapi, UseExperimentalWasapi);
+                config.BindWith(FrameworkSetting.VolumeUniversal, Volume);
+                config.BindWith(FrameworkSetting.VolumeEffect, VolumeSample);
+                config.BindWith(FrameworkSetting.VolumeMusic, VolumeTrack);
+            }
+
+            AudioDevice.ValueChanged += _ => AudioScheduler.AddOnce(InitCurrentDevice);
+            UseExperimentalWasapi.ValueChanged += _ => AudioScheduler.AddOnce(InitCurrentDevice);
+            // InitCurrentDevice not required for changes to `GlobalMixerHandle` as it is only changed when experimental wasapi is toggled (handled above).
 
             AddItem(TrackMixer = AudioCreateAudioMixer(null, nameof(TrackMixer)));
             AddItem(SampleMixer = AudioCreateAudioMixer(null, nameof(SampleMixer)));
@@ -177,11 +200,6 @@ namespace osu.Framework.Audio
             OnLostDevice = null;
 
             base.Dispose(disposing);
-        }
-
-        protected void OnDeviceChanged()
-        {
-            AudioScheduler.Add(() => SetAudioDevice(AudioDevice.Value));
         }
 
         private static int userMixerID;
@@ -247,8 +265,7 @@ namespace osu.Framework.Audio
             return sm;
         }
 
-        protected abstract bool SetAudioDevice(string deviceName = null);
-        protected abstract bool SetAudioDevice(int deviceIndex);
+        protected abstract void InitCurrentDevice();
 
         // The current device is considered valid if it is enabled, initialized, and not a fallback device.
         protected abstract bool IsCurrentDeviceValid();
