@@ -70,19 +70,12 @@ namespace osu.Framework.Audio.Sample
                     MySoundLibrary.mslSampleSetLoop(handle, looping.ToIntBool());
                     addToMixer(this);
 
-                    playInternal();
+                    MySoundLibrary.mslSamplePlay(handle);
                     enqueuedPlaybackStart = false;
                 }
             }
 
             base.UpdateState();
-        }
-
-        private void playInternal()
-        {
-            InvalidateState();
-
-            MySoundLibrary.mslSamplePlay(handle);
         }
 
         /// <summary>
@@ -92,17 +85,16 @@ namespace osu.Framework.Audio.Sample
 
         public override void Play()
         {
-            base.Play();
-
             if (!IsDisposed)
             {
-                if (handle == IntPtr.Zero)
-                {
-                    enqueuedPlaybackStart = true;
-                    return;
-                }
+                updateVolumeFrequency();
 
-                playInternal();
+                if (handle == IntPtr.Zero)
+                    enqueuedPlaybackStart = true;
+                else
+                    MySoundLibrary.mslSamplePlay(handle);
+
+                base.Play();
             }
             else
             {
@@ -112,15 +104,21 @@ namespace osu.Framework.Audio.Sample
 
         public override void Stop()
         {
+            enqueuedPlaybackStart = false;
+
             base.Stop();
 
             EnqueueAction(() =>
             {
-                enqueuedPlaybackStart = false;
-
                 if (!IsDisposed)
                     MySoundLibrary.mslSamplePause(Handle);
             });
+        }
+
+        private void updateVolumeFrequency()
+        {
+            MySoundLibrary.mslSampleSetVolume(Handle, AggregateVolume.Value, AggregateBalance.Value);
+            MySoundLibrary.mslSampleSetFrequency(Handle, AggregateFrequency.Value);
         }
 
         internal override void OnStateChanged()
@@ -130,8 +128,7 @@ namespace osu.Framework.Audio.Sample
             if (IsDisposed)
                 return;
 
-            MySoundLibrary.mslSampleSetVolume(Handle, AggregateVolume.Value, AggregateBalance.Value);
-            MySoundLibrary.mslSampleSetFrequency(Handle, AggregateFrequency.Value);
+            updateVolumeFrequency();
         }
 
         protected override void Dispose(bool disposing)
