@@ -60,8 +60,7 @@ namespace osu.Framework.Audio.Sample
             {
                 if (handle != IntPtr.Zero)
                 {
-                    // race condition when enqueuedPlaybackStart becomes true again if Play() is called AGAIN while the below snippet is running
-                    // it can be easily handled by setting it to false again
+                    MySoundLibrary.mslSamplePlay(handle);
                     enqueuedPlaybackStart = false;
                 }
                 else if (sample.IsLoaded)
@@ -70,6 +69,7 @@ namespace osu.Framework.Audio.Sample
                     MySoundLibrary.mslSampleSetLoop(handle, looping.ToIntBool());
                     addToMixer(this);
 
+                    InvalidateState();
                     MySoundLibrary.mslSamplePlay(handle);
                     enqueuedPlaybackStart = false;
                 }
@@ -87,13 +87,7 @@ namespace osu.Framework.Audio.Sample
         {
             if (!IsDisposed)
             {
-                updateVolumeFrequency();
-
-                if (handle == IntPtr.Zero)
-                    enqueuedPlaybackStart = true;
-                else
-                    MySoundLibrary.mslSamplePlay(handle);
-
+                enqueuedPlaybackStart = true;
                 base.Play();
             }
             else
