@@ -306,8 +306,18 @@ namespace osu.Framework.Platform.SDL3
         /// </remarks>
         private void fetchDisplays()
         {
-            Displays = getSDLDisplays();
-            DisplaysChanged?.Invoke(Displays);
+            var newDisplays = getSDLDisplays();
+
+            if (newDisplays.Length > 0)
+            {
+                Displays = newDisplays;
+                DisplaysChanged?.Invoke(newDisplays);
+            }
+            else
+            {
+                // keep Displays stale if zero displays are currently detected
+                Logger.Log("Got zero displays from SDL, ignoring.");
+            }
         }
 
         /// <summary>
@@ -623,16 +633,29 @@ namespace osu.Framework.Platform.SDL3
                 BorderSize.Value = borderSize;
         }
 
+        /// <summary>
+        /// Whether <see cref="SDL_GetWindowBordersSize"/> is supported on this platform.
+        /// </summary>
+        private bool? bordersSizeSupported;
+
         private unsafe bool tryGetBorderSize(out MarginPadding borderSize)
         {
-            int top, left, bottom, right;
-
-            if (!SDL_GetWindowBordersSize(SDLWindowHandle, &top, &left, &bottom, &right))
+            if (bordersSizeSupported == false)
             {
                 borderSize = default;
                 return false;
             }
 
+            int top, left, bottom, right;
+
+            if (!SDL_GetWindowBordersSize(SDLWindowHandle, &top, &left, &bottom, &right))
+            {
+                bordersSizeSupported ??= SDL_GetError() != "That operation is not supported";
+                borderSize = default;
+                return false;
+            }
+
+            bordersSizeSupported = true;
             borderSize = new MarginPadding
             {
                 Top = top,

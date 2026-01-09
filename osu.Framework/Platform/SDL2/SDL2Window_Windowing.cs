@@ -302,8 +302,18 @@ namespace osu.Framework.Platform.SDL2
         /// </remarks>
         private void fetchDisplays()
         {
-            Displays = getSDLDisplays();
-            DisplaysChanged?.Invoke(Displays);
+            var newDisplays = getSDLDisplays();
+
+            if (newDisplays.Length > 0)
+            {
+                Displays = newDisplays;
+                DisplaysChanged?.Invoke(newDisplays);
+            }
+            else
+            {
+                // keep Displays stale if zero displays are currently detected
+                Logger.Log("Got zero displays from SDL, ignoring.");
+            }
         }
 
         /// <summary>
@@ -328,7 +338,7 @@ namespace osu.Framework.Platform.SDL2
         {
             int numDisplays = SDL_GetNumVideoDisplays();
 
-            if (numDisplays <= 0)
+            if (numDisplays < 0)
                 throw new InvalidOperationException($"Failed to get number of SDL displays. Return code: {numDisplays}. SDL Error: {SDL_GetError()}");
 
             var builder = ImmutableArray.CreateBuilder<Display>(numDisplays);
@@ -606,14 +616,27 @@ namespace osu.Framework.Platform.SDL2
                 BorderSize.Value = borderSize;
         }
 
+        /// <summary>
+        /// Whether <see cref="SDL_GetWindowBordersSize"/> is supported on this platform.
+        /// </summary>
+        private bool? bordersSizeSupported;
+
         private bool tryGetBorderSize(out MarginPadding borderSize)
         {
-            if (SDL_GetWindowBordersSize(SDLWindowHandle, out int top, out int left, out int bottom, out int right) < 0)
+            if (bordersSizeSupported == false)
             {
                 borderSize = default;
                 return false;
             }
 
+            if (SDL_GetWindowBordersSize(SDLWindowHandle, out int top, out int left, out int bottom, out int right) < 0)
+            {
+                bordersSizeSupported ??= SDL_GetError() != "That operation is not supported";
+                borderSize = default;
+                return false;
+            }
+
+            bordersSizeSupported = true;
             borderSize = new MarginPadding
             {
                 Top = top,
