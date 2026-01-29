@@ -86,6 +86,7 @@ namespace osu.Framework.Audio.Track
                 this.data = null;
                 channels = 2;
 
+                SDL3AudioManager.PrepareLibrary();
                 SDL3AudioFileCallbacks callbacks = new SDL3AudioFileCallbacks(data);
                 IntPtr track = MySoundLibrary.mslCreateTrack();
                 if (track == IntPtr.Zero)

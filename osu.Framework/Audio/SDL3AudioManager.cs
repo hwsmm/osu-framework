@@ -31,24 +31,32 @@ namespace osu.Framework.Audio
 
         private static volatile bool libraryPrepared;
 
+        private static readonly object syncLock = new object();
+
         internal static unsafe void PrepareLibrary()
         {
             if (libraryPrepared)
                 return;
 
-            libraryPrepared = true;
-
-            if (ManagedBass.Bass.CurrentDevice < 0)
-                ManagedBass.Bass.Init(ManagedBass.Bass.NoSoundDevice);
-
-            if (RuntimeInfo.OS == RuntimeInfo.Platform.Linux)
+            lock (syncLock)
             {
-                // is this even needed?
-                Library.Load("libmysoundlib.so", Library.LoadFlags.RTLD_LAZY | Library.LoadFlags.RTLD_GLOBAL);
-            }
+                if (libraryPrepared)
+                    return;
 
-            MySoundLibrary.mslSetLogFunction(&logOutput);
-            MySoundLibrary.mslSetLibraryLoadFunctions(&loadNativeLib, &loadExportedSym, &closeNativeLib);
+                if (ManagedBass.Bass.CurrentDevice < 0)
+                    ManagedBass.Bass.Init(ManagedBass.Bass.NoSoundDevice);
+
+                if (RuntimeInfo.OS == RuntimeInfo.Platform.Linux)
+                {
+                    // is this even needed?
+                    Library.Load("libmysoundlib.so", Library.LoadFlags.RTLD_LAZY | Library.LoadFlags.RTLD_GLOBAL);
+                }
+
+                MySoundLibrary.mslSetLogFunction(&logOutput);
+                MySoundLibrary.mslSetLibraryLoadFunctions(&loadNativeLib, &loadExportedSym, &closeNativeLib);
+
+                libraryPrepared = true;
+            }
         }
 
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
