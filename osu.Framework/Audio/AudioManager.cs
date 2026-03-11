@@ -211,7 +211,7 @@ namespace osu.Framework.Audio
         /// Channels removed from this <see cref="AudioMixer"/> fall back to the global <see cref="SampleMixer"/>.
         /// </remarks>
         /// <param name="identifier">An identifier displayed on the audio mixer visualiser.</param>
-        public AudioMixer CreateAudioMixer(string identifier = default) =>
+        public AudioMixer CreateAudioMixer(string identifier = null) =>
             AudioCreateAudioMixer(SampleMixer, !string.IsNullOrEmpty(identifier) ? identifier : $"user #{Interlocked.Increment(ref userMixerID)}");
 
         protected abstract AudioMixer AudioCreateAudioMixer(AudioMixer fallbackMixer, string identifier);
