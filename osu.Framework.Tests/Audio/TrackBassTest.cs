@@ -368,6 +368,27 @@ namespace osu.Framework.Tests.Audio
 
         [TestCase(AudioTestComponents.Type.BASS)]
         [TestCase(AudioTestComponents.Type.SDL3)]
+        public void TestHasCompletedFiresAfterDeviceChange(AudioTestComponents.Type id)
+        {
+            setupBackend(id, true);
+
+            // start playback and wait for completion.
+            startPlaybackAt(track.Length - 1);
+
+            Assert.IsTrue(track.IsRunning);
+
+            audio.UpdateDevice();
+
+            Assert.IsTrue(track.IsRunning);
+
+            takeEffectsAndUpdateAfter(50);
+
+            Assert.IsFalse(track.IsRunning);
+            Assert.IsTrue(track.HasCompleted);
+        }
+
+        [TestCase(AudioTestComponents.Type.BASS)]
+        [TestCase(AudioTestComponents.Type.SDL3)]
         public void TestHasCompletedResetsOnSeekBack(AudioTestComponents.Type id)
         {
             setupBackend(id, true);

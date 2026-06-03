@@ -52,6 +52,10 @@ namespace osu.Framework.Tests.Audio
 
         internal abstract SampleFactory CreateSampleFactory(Stream stream, string name, AudioMixer mixer, int playbackConcurrency);
 
+        public virtual void UpdateDevice()
+        {
+        }
+
         public abstract void Init();
 
         public virtual void Add(params AudioComponent[] component)

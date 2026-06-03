@@ -22,6 +22,8 @@ namespace osu.Framework.Tests.Audio
         {
         }
 
+        public override void UpdateDevice() => allComponents.UpdateDevice(-1);
+
         public override void Init()
         {
             AudioThread.PreloadBass();
